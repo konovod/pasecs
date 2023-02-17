@@ -6,6 +6,8 @@ unit uApp;
 
 interface
 
+uses SysUtils;
+
 procedure DoTests;
 
 implementation
@@ -23,11 +25,20 @@ type
     constructor Create(s: string);
   end;
 
+procedure MyAssert(value: boolean);
+begin
+  if value then
+    write('.')
+  else
+    raise Exception.Create('Test failed');
+end;
+
 procedure DoTests;
 var
   w: TECSWorld;
   e1, e2: TECSEntity;
 begin
+  writeln('Starting tests suite:');
   w := TECSWorld.Create;
   e1 := w.NewEntity;
   e1.Add<TComp1>(TComp1.Create(1,2));
@@ -36,18 +47,20 @@ begin
   e2 := w.NewEntity;
   e2.Add<TComp2>(TComp2.Create('e2'));
 
-  assert(e1.Get<TComp2>.s = 'e1');
-  assert(e2.Get<TComp2>.s = 'e2');
+  MyAssert(e1.Get<TComp2>.s = 'e1');
+  MyAssert(e2.Get<TComp2>.s = 'e2');
 
   e1.Replace<TComp2>(TComp2.Create('abc'));
-  assert(e1.Get<TComp2>.s = 'abc');
+  MyAssert(e1.Get<TComp2>.s = 'abc');
 
   e1.remove<TComp2>;
-  assert(e2.Get<TComp2>.s = 'e2');
+  MyAssert(e2.Get<TComp2>.s = 'e2');
 
-  writeln(e1.ToString);
-  writeln(e2.ToString);
+//  writeln(e1.ToString);
+//  writeln(e2.ToString);
 
+  writeln;
+  writeln('Tests passed');
 end;
 
 { TComp1 }
