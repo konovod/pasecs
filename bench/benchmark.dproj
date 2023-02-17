@@ -147,6 +147,7 @@
         </DelphiCompile>
         <DCCReference Include="..\ecs.pas"/>
         <DCCReference Include="uTests.pas"/>
+        <DCCReference Include="uBenchmark.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

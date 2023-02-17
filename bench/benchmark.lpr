@@ -1,6 +1,6 @@
 program benchmark;
 
-uses ecs, uApp;
+uses ecs, uTests;
 
 begin
   DoTests;
