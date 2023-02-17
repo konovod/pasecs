@@ -11,5 +11,6 @@ uses
 
 begin
   DoTests;
+  writeln('Tests passed');
   readln;
 end.

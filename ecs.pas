@@ -24,11 +24,10 @@ type
   { TECSStorage }
 
   TECSStorage<T> = class(TGenericECSStorage)
-  type
-    PT = ^T;
   protected
-  var
-    dense: TList<T>;
+    dense: array of TEntityID;
+    payload: array of T;
+    dense_used: Integer;
     sparse: TDictionary<TEntityID, integer>;
   protected
     function TryFindIndex(id: TEntityID; out i: integer): Boolean;
@@ -40,7 +39,7 @@ type
   public
     function Get(id: TEntityID): T;
     function TryGet(id: TEntityID; out comp: T): Boolean;
-    function GetPtr(id: TEntityID): PT;
+    function GetPtr(id: TEntityID): Pointer;
     function Has(id: TEntityID): Boolean;
     procedure Replace(id: TEntityID; item: T);
     procedure AddOrReplace(id: TEntityID; item: T);
@@ -88,13 +87,13 @@ implementation
 
 constructor TECSStorage<T>.Create;
 begin
-  dense := TList<T>.Create;
+  SetLength(dense, 1);
+  SetLength(payload, 1);
   sparse := TDictionary<TEntityID, integer>.Create;
 end;
 
 destructor TECSStorage<T>.Destroy;
 begin
-  dense.Free;
   sparse.Free;
   inherited Destroy;
 end;
@@ -106,7 +105,7 @@ end;
 
 function TECSStorage<T>.Get(id: TEntityID): T;
 begin
-  Result := dense[FindIndex(id)]
+  Result := payload[FindIndex(id)]
 end;
 
 function TECSStorage<T>.TryFindIndex(id: TEntityID; out i: integer): Boolean;
@@ -120,12 +119,12 @@ var
 begin
   Result := TryFindIndex(id, i);
   if Result then
-    comp := dense[i];
+    comp := payload[i];
 end;
 
-function TECSStorage<T>.GetPtr(id: TEntityID): PT;
+function TECSStorage<T>.GetPtr(id: TEntityID): Pointer;
 begin
-  Result := @dense[FindIndex(id)]
+  Result := @(payload[FindIndex(id)])
 end;
 
 function TECSStorage<T>.Has(id: TEntityID): Boolean;
@@ -137,15 +136,22 @@ end;
 
 procedure TECSStorage<T>.AddDontCheck(id: TEntityID; item: T);
 begin
-  dense.Add(item);
-  sparse.Add(id, dense.Count - 1)
+  if dense_used >= length(dense) then
+  begin
+    SetLength(dense, Length(dense)*2);
+    SetLength(payload, Length(payload)*2);
+  end;
+  inc(dense_used);
+  payload[dense_used-1] := item;
+  dense[dense_used-1] := id;
+  sparse.Add(id, dense_used-1)
 end;
 
 procedure TECSStorage<T>.Replace(id: TEntityID; item: T);
 var
   i: integer;
 begin
-  dense[FindIndex(id)] := item;
+  payload[FindIndex(id)] := item;
 end;
 
 procedure TECSStorage<T>.AddOrReplace(id: TEntityID; item: T);
@@ -153,7 +159,7 @@ var
   i: integer;
 begin
   if TryFindIndex(id, i) then
-    dense[i] := item
+    payload[i] := item
   else
     AddDontCheck(id, item)
 end;
@@ -163,8 +169,10 @@ var
   i: integer;
 begin
   i := FindIndex(id);
-  dense[i] := dense[dense.Count - 1];
-  dense.Delete(dense.Count - 1);
+  payload[i] := payload[dense_used-1];
+  dense[i] := dense[dense_used-1];
+  sparse[dense[i]] := i;
+  dec(dense_used);
   sparse.Remove(id);
 end;
 

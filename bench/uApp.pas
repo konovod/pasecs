@@ -1,5 +1,9 @@
 unit uApp;
 
+{$IFDEF FPC}
+{$mode Delphi}{$H+}
+{$ENDIF}
+
 interface
 
 procedure DoTests;
@@ -32,13 +36,17 @@ begin
   e2 := w.NewEntity;
   e2.Add<TComp2>(TComp2.Create('e2'));
 
-  writeln(e1.ToString);
-  writeln(e1.Get<TComp2>.s);
-  writeln(e2.ToString);
-  writeln(e2.Get<TComp2>.s);
+  assert(e1.Get<TComp2>.s = 'e1');
+  assert(e2.Get<TComp2>.s = 'e2');
 
   e1.Replace<TComp2>(TComp2.Create('abc'));
-  writeln(e1.Get<TComp2>.s);
+  assert(e1.Get<TComp2>.s = 'abc');
+
+  e1.remove<TComp2>;
+  assert(e2.Get<TComp2>.s = 'e2');
+
+  writeln(e1.ToString);
+  writeln(e2.ToString);
 
 end;
 

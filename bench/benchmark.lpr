@@ -1,7 +1,8 @@
 program benchmark;
 
-uses ecs;
+uses ecs, uApp;
 
 begin
+  DoTests;
 end.
 
