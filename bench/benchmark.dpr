@@ -6,7 +6,7 @@ program benchmark;
 uses
   System.SysUtils,
   ecs in '..\ecs.pas',
-  uApp in 'uApp.pas';
+  uTests in 'uTests.pas';
 
 begin
   DoTests;
