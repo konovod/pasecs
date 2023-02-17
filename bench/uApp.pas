@@ -41,7 +41,7 @@ begin
   writeln('Starting tests suite:');
   w := TECSWorld.Create;
   e1 := w.NewEntity;
-  e1.Add<TComp1>(TComp1.Create(1,2));
+  e1.Add<TComp1>(TComp1.Create(1, 2));
   e1.Add<TComp2>(TComp2.Create('e1'));
 
   e2 := w.NewEntity;
@@ -56,8 +56,8 @@ begin
   e1.remove<TComp2>;
   MyAssert(e2.Get<TComp2>.s = 'e2');
 
-//  writeln(e1.ToString);
-//  writeln(e2.ToString);
+  // writeln(e1.ToString);
+  // writeln(e2.ToString);
 
   writeln;
   writeln('Tests passed');

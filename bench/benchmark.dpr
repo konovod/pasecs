@@ -1,7 +1,6 @@
 program benchmark;
 
 {$APPTYPE CONSOLE}
-
 {$R *.res}
 
 uses
@@ -12,4 +11,5 @@ uses
 begin
   DoTests;
   readln;
+
 end.
