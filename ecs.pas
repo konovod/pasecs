@@ -167,8 +167,9 @@ type
 
   TECSSystem = class
   private
-    Owner: TECSWorld;
+    FWorld: TECSWorld;
   public
+    property World: TECSWorld read FWorld;
     constructor Create(AOwner: TECSWorld); virtual; // TODO
     procedure Init; virtual;
     function Filter: TECSFilter; virtual;
@@ -686,7 +687,7 @@ end;
 
 constructor TECSSystem.Create(AOwner: TECSWorld);
 begin
-  Owner := AOwner;
+  FWorld := AOwner;
 end;
 
 procedure TECSSystem.Execute;
@@ -726,7 +727,7 @@ end;
 
 function TECSSystems.Add(sys: TECSSystemClass): TECSSystems;
 begin
-  Result := Add(sys.Create(Owner));
+  Result := Add(sys.Create(World));
 end;
 
 constructor TECSSystems.Create(AOwner: TECSWorld);

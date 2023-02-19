@@ -262,6 +262,49 @@ begin
   w.Free;
 end;
 
+type
+  TTestSystem = class(TECSSystem)
+    InitCalled, ExecuteCalled, TeardownCalled: integer;
+    procedure Init; override;
+    procedure Teardown; override;
+    procedure Execute; override;
+    function Filter: TECSFilter; override;
+    procedure Process(e: TECSEntity); override;
+  end;
+
+procedure TestSystems;
+var
+  w: TECSWorld;
+  ent: TECSEntity;
+  systems: TECSSystems;
+  test: TTestSystem;
+begin
+  w := TECSWorld.Create;
+  systems := TECSSystems.Create(w);
+  test := TTestSystem.Create(w);
+  systems.Add(test);
+  systems.Add(TTestSystem);
+  systems.Add(TECSSystem);
+  MyAssert(test.InitCalled = 0);
+  systems.Init;
+  MyAssert(test.InitCalled = 1);
+
+  ent := w.NewEntity;
+  ent.Add<TComp1>(TComp1.Create(1, 10));
+
+  MyAssert(test.ExecuteCalled = 0);
+  systems.Execute;
+  MyAssert(test.ExecuteCalled = 1);
+
+  MyAssert(ent.Get<TComp1>.x = 1 + 10 + 10);
+
+  MyAssert(test.TeardownCalled = 0);
+  systems.Teardown;
+  MyAssert(test.TeardownCalled = 1);
+  systems.Free;
+  w.Free;
+end;
+
 procedure DoTests;
 begin
   writeln('Starting tests suite:');
@@ -297,6 +340,36 @@ end;
 class function TComp3.It: TComp3;
 begin
 
+end;
+
+{ TTestSystem }
+
+procedure TTestSystem.Execute;
+begin
+  inc(ExecuteCalled)
+end;
+
+function TTestSystem.Filter: TECSFilter;
+begin
+  Result := World.Filter.Include<TComp1>;
+end;
+
+procedure TTestSystem.Init;
+begin
+  inc(InitCalled);
+end;
+
+procedure TTestSystem.Process(e: TECSEntity);
+var
+  ptr: ^TComp1;
+begin
+  ptr := e.GetPtr<TComp1>;
+  ptr.x := ptr.x + ptr.y;
+end;
+
+procedure TTestSystem.Teardown;
+begin
+  inc(TeardownCalled)
 end;
 
 end.
