@@ -70,7 +70,7 @@ begin
   for I := 1 to 10 do // warmup
     x();
   watch.Stop;
-  if watch.ElapsedMilliseconds > 1000 then
+  if watch.ElapsedMilliseconds >= 1000 then
   begin
     Result := watch.ElapsedMilliseconds * 100;
     exit;
@@ -189,6 +189,13 @@ type
     constructor Create(AOwner: TECSWorld); override;
   end;
 
+  TComplexFilter = class(TECSSystem)
+    count: integer;
+  public
+    function Filter: TECSFilter; override;
+    procedure Process(e: TECSEntity); override;
+  end;
+
 procedure BenchEmptyFilter;
 var
   w: TECSWorld;
@@ -262,18 +269,17 @@ begin
   BenchSystemExecution(TUpdateComp1);
   BenchSystemExecution(TUpdateComp1UsingPtr);
 
-//  BenchSystemExecution(TReplaceComps);
+  BenchSystemExecution(TReplaceComps);
+  BenchSystemExecution(TComplexFilter);
 
   // SystemGetSingletonComponent 130.97M (  7.64ns) (± 1.19%)  0.0B/op   1.39× slower
   // IterateOverCustomFilterSystem  75.59M ( 13.23ns) (± 1.17%)  0.0B/op   2.41× slower
   // ***********************************************
-
-  // SystemReplaceComps  41.23  ( 24.25ms) (± 0.14%)  0.0B/op   7.21× slower
   // SystemPassEvents  32.59  ( 30.68ms) (± 0.37%)  0.0B/op   9.12× slower
   // ***********************************************
   // FullFilterSystem 169.08  (  5.91ms) (± 0.21%)  0.0B/op   1.76× slower
   // FullFilterAnyOfSystem 125.96  (  7.94ms) (± 0.21%)  0.0B/op   2.36× slower
-  // SystemComplexFilter 297.23  (  3.36ms) (± 2.22%)  0.0B/op        fastest
+
   // SystemComplexSelectFilter 286.01  (  3.50ms) (± 0.81%)  0.0B/op   1.04× slower
 
   world.Free;
@@ -400,7 +406,7 @@ end;
 
 procedure TCountComp1.Process(e: TECSEntity);
 begin
-  Inc(count, e.Get<TComp1>.x);
+  Inc(count);
 end;
 
 { TUpdateComp1 }
@@ -440,7 +446,7 @@ end;
 
 function TReplaceComp1.Filter: TECSFilter;
 begin
-  world.Filter.Include<TComp1>
+  Result := world.Filter.Include<TComp1>
 end;
 
 procedure TReplaceComp1.Process(e: TECSEntity);
@@ -456,7 +462,7 @@ end;
 
 function TReplaceComp5.Filter: TECSFilter;
 begin
-  world.Filter.Include<TComp1>
+  Result := world.Filter.Include<TComp5>
 end;
 
 procedure TReplaceComp5.Process(e: TECSEntity);
@@ -475,6 +481,19 @@ begin
   inherited;
   Add(TReplaceComp1);
   Add(TReplaceComp5);
+end;
+
+{ TComplexFilter }
+
+function TComplexFilter.Filter: TECSFilter;
+begin
+  Result := world.Filter.Include<TComp1>.Include<TComp2>.Exclude<TComp3>.
+    Exclude<TComp4>
+end;
+
+procedure TComplexFilter.Process(e: TECSEntity);
+begin
+  Inc(count);
 end;
 
 begin

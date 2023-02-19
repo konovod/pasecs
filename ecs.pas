@@ -191,8 +191,8 @@ type
     Filters: array of TECSFilter;
   public
     constructor Create(AOwner: TECSWorld); override;
-    procedure Init; override; // TODO
-    procedure Execute; override; // TODO
+    procedure Init; override;
+    procedure Execute; override;
     procedure Teardown; override;
     function Add(sys: TECSSystem): TECSSystems; overload;
     function Add(sys: TECSSystemClass): TECSSystems; overload;
@@ -277,7 +277,8 @@ begin
   begin
     ent.World := World;
     ent.id := id;
-    raise Exception.Create('Component '+ComponentName+' already added to '+ent.ToString)
+    raise Exception.Create('Component ' + ComponentName + ' already added to ' +
+      ent.ToString)
   end
   else
     AddDontCheck(id, item)
