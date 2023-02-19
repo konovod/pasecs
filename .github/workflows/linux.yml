@@ -14,5 +14,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y lazarus
       - uses: actions/checkout@v2
-      - name: Run tests
+      - name: Compile tests
         run: lazbuild bench/benchmark.lpr
+      - name: Run tests
+        run: bench/benchmark.exe
