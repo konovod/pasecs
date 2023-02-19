@@ -245,7 +245,21 @@ begin
   end;
   f := w.Filter.Include<TComp2>;
   MyAssert(SumItems(f) = 3+6+9);
+  MyAssert(SumItems(f) = 3+6+9);
   f.Free;
+  f := w.Filter.Include<TComp1>.Include<TComp2>;
+  MyAssert(SumItems(f) = 3+6+9);
+  f.Free;
+  f := w.Filter.Include<TComp2>.Include<TComp1>;
+  MyAssert(SumItems(f) = 3+6+9);
+  f.Free;
+  f := w.Filter.Include<TComp2>.Exclude<TComp3>;
+  MyAssert(SumItems(f) = 3+9);
+  f.Free;
+  f := w.Filter.Include<TComp3>.Include<TComp2>.Exclude<TComp1>;
+  MyAssert(SumItems(f) = 0);
+  f.Free;
+  
   w.Free;
 end;
 
