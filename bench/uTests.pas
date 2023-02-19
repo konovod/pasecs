@@ -216,7 +216,7 @@ begin
   aset.Free;
 end;
 
-function SumItems(f: TECSFilter): Integer;
+function SumItems(f: TECSFilter): integer;
 var
   ent: TECSEntity;
 begin
@@ -224,7 +224,6 @@ begin
   for ent in f do
     Result := Result + ent.Get<TComp1>.x
 end;
-  
 
 procedure TestFilters;
 var
@@ -244,22 +243,22 @@ begin
       ent.Add<TComp3>(TComp3.It)
   end;
   f := w.Filter.Include<TComp2>;
-  MyAssert(SumItems(f) = 3+6+9);
-  MyAssert(SumItems(f) = 3+6+9);
+  MyAssert(SumItems(f) = 3 + 6 + 9);
+  MyAssert(SumItems(f) = 3 + 6 + 9);
   f.Free;
   f := w.Filter.Include<TComp1>.Include<TComp2>;
-  MyAssert(SumItems(f) = 3+6+9);
+  MyAssert(SumItems(f) = 3 + 6 + 9);
   f.Free;
   f := w.Filter.Include<TComp2>.Include<TComp1>;
-  MyAssert(SumItems(f) = 3+6+9);
+  MyAssert(SumItems(f) = 3 + 6 + 9);
   f.Free;
   f := w.Filter.Include<TComp2>.Exclude<TComp3>;
-  MyAssert(SumItems(f) = 3+9);
+  MyAssert(SumItems(f) = 3 + 9);
   f.Free;
   f := w.Filter.Include<TComp3>.Include<TComp2>.Exclude<TComp1>;
   MyAssert(SumItems(f) = 0);
   f.Free;
-  
+
   w.Free;
 end;
 

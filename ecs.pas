@@ -103,6 +103,7 @@ type
   { TWorld }
 
   TECSFilter = class;
+
   TECSWorld = class
   protected
     cur_id: TEntityID;
@@ -161,6 +162,38 @@ type
     function GetEnumerator: TFilterEntityEnumerator;
     function Satisfied(Entity: TECSEntity): Boolean;
     constructor Create(aWorld: TECSWorld);
+    destructor Destroy; override;
+  end;
+
+  TECSSystem = class
+  private
+    Owner: TECSWorld;
+  public
+    constructor Create(AOwner: TECSWorld); virtual; // TODO
+    procedure Init; virtual;
+    function Filter: TECSFilter; virtual;
+    procedure Execute; virtual;
+    procedure Process(e: TECSEntity); virtual;
+    procedure Teardown; virtual;
+  end;
+
+  TECSSystemClass = class of TECSSystem;
+
+  TECSSystems = class(TECSSystem)
+  private type
+    TState = (Created, Initialized, TearedDown);
+
+  var
+    State: TState;
+    Items: array of TECSSystem;
+    Filters: array of TECSFilter;
+  public
+    constructor Create(AOwner: TECSWorld); override;
+    procedure Init; override; // TODO
+    procedure Execute; override; // TODO
+    procedure Teardown; override;
+    function Add(sys: TECSSystem): TECSSystems; overload;
+    function Add(sys: TECSSystemClass): TECSSystems; overload;
     destructor Destroy; override;
   end;
 
@@ -647,6 +680,117 @@ begin
   Result := inner.MoveNext;
   while Result and not Filter.Satisfied(inner.Current) do
     Result := inner.MoveNext;
+end;
+
+{ TECSSystem }
+
+constructor TECSSystem.Create(AOwner: TECSWorld);
+begin
+  Owner := AOwner;
+end;
+
+procedure TECSSystem.Execute;
+begin
+  // does nothing
+end;
+
+function TECSSystem.Filter: TECSFilter;
+begin
+  Result := nil;
+end;
+
+procedure TECSSystem.Init;
+begin
+  // does nothing
+end;
+
+procedure TECSSystem.Process(e: TECSEntity);
+begin
+  // does nothing
+end;
+
+procedure TECSSystem.Teardown;
+begin
+  // does nothing
+end;
+
+{ TECSSystems }
+
+function TECSSystems.Add(sys: TECSSystem): TECSSystems;
+begin
+  assert(State = Created);
+  SetLength(Items, length(Items) + 1);
+  Items[length(Items) - 1] := sys;
+  Result := Self;
+end;
+
+function TECSSystems.Add(sys: TECSSystemClass): TECSSystems;
+begin
+  Result := Add(sys.Create(Owner));
+end;
+
+constructor TECSSystems.Create(AOwner: TECSWorld);
+begin
+  inherited;
+  State := Created;
+end;
+
+destructor TECSSystems.Destroy;
+var
+  sys: TECSSystem;
+begin
+  assert(State = TearedDown);
+  for sys in Items do
+    sys.Free;
+  inherited;
+end;
+
+procedure TECSSystems.Execute;
+var
+  sys: TECSSystem;
+  flt: TECSFilter;
+  ent: TECSEntity;
+  i: Integer;
+begin
+  assert(State = Initialized);
+  for i := 0 to length(Items) - 1 do
+  begin
+    sys := Items[i];
+    flt := Filters[i];
+    if Assigned(flt) then
+      for ent in flt do
+        sys.Process(ent);
+    sys.Execute;
+  end;
+end;
+
+procedure TECSSystems.Init;
+var
+  i: Integer;
+  sys: TECSSystem;
+begin
+  assert(State = Created);
+  SetLength(Filters, length(Items));
+  for i := 0 to length(Items) - 1 do
+  begin
+    sys := Items[i];
+    sys.Init;
+    Filters[i] := sys.Filter
+  end;
+  State := Initialized;
+end;
+
+procedure TECSSystems.Teardown;
+var
+  sys: TECSSystem;
+  flt: TECSFilter;
+begin
+  assert(State = Initialized);
+  for sys in Items do
+    sys.Teardown;
+  for flt in Filters do
+    flt.Free;
+  State := TearedDown;
 end;
 
 end.
