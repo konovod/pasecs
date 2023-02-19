@@ -1,5 +1,9 @@
 ﻿unit uBenchmark;
 
+{$IFDEF FPC}
+{$mode Delphi}{$H+}
+{$ENDIF}
+
 interface
 
 uses ecs;
@@ -38,7 +42,13 @@ procedure DoBenchmarks;
 
 implementation
 
-uses System.Diagnostics, SysUtils;
+uses
+  {$IFDEF FPC}
+  stopwatch,
+  {$ELSE}
+  System.Diagnostics,
+  {$ENDIF}
+  SysUtils;
 
 var
   watch: TStopwatch;
@@ -48,6 +58,13 @@ var
 type
   TBenchProc = procedure;
 
+
+{$IFDEF FPC}
+function UsedMemory: integer;
+begin
+  Result := GetFPCHeapStatus.CurrHeapUsed;
+end;
+{$ELSE}
 function UsedMemory: integer;
 var
   state: TMemoryManagerState;
@@ -59,6 +76,7 @@ begin
   for small in state.SmallBlockTypeStates do
     Inc(Result, small.AllocatedBlockCount)
 end;
+{$ENDIF}
 
 function Benchmark(x: TBenchProc): integer; // return nanoseconds
 var
@@ -362,7 +380,7 @@ end;
 
 procedure TAskComponent<Positive>.Execute;
 begin
-  found := found xor ent.Has<Positive>
+  found := found xor (ent.Has<Positive>)
 end;
 
 procedure TAskComponent<Positive>.Init;
@@ -421,7 +439,11 @@ procedure TUpdateComp1.Process(e: TECSEntity);
 var
   c: TComp1;
 begin
+  {$IFDEF FPC}
+  e.TryGet<TComp1>(c);
+  {$ELSE}
   c := e.Get<TComp1>;
+  {$ENDIF}
   c.x := -c.x;
   c.y := -c.y;
   e.Update<TComp1>(c);
@@ -454,7 +476,11 @@ procedure TReplaceComp1.Process(e: TECSEntity);
 var
   c: TComp1;
 begin
+  {$IFDEF FPC}
+  e.TryGet<TComp1>(c);
+  {$ELSE}
   c := e.Get<TComp1>;
+  {$ENDIF}
   e.Remove<TComp1>;
   e.Add<TComp5>(TComp5.Create(-c.x, -c.y));
 end;
@@ -470,7 +496,11 @@ procedure TReplaceComp5.Process(e: TECSEntity);
 var
   c: TComp5;
 begin
+  {$IFDEF FPC}
+  e.TryGet<TComp5>(c);
+  {$ELSE}
   c := e.Get<TComp5>;
+  {$ENDIF}
   e.Remove<TComp5>;
   e.Add<TComp1>(TComp1.Create(-c.vx, -c.vy));
 end;

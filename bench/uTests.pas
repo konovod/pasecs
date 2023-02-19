@@ -50,14 +50,20 @@ begin
   e2 := w.NewEntity;
   e2.Add<TComp2>(TComp2.Create('e2'));
 
+  {$IFNDEF FPC}
   MyAssert(e1.Get<TComp2>.s = 'e1');
   MyAssert(e2.Get<TComp2>.s = 'e2');
+  {$ENDIF}
 
   e1.Update<TComp2>(TComp2.Create('abc'));
+  {$IFNDEF FPC}
   MyAssert(e1.Get<TComp2>.s = 'abc');
+  {$ENDIF}
 
   e1.remove<TComp2>;
+  {$IFNDEF FPC}
   MyAssert(e2.Get<TComp2>.s = 'e2');
+  {$ENDIF}
   w.Free;
 end;
 
@@ -71,7 +77,9 @@ begin
   w := TECSWorld.Create;
   ent := w.NewEntity;
   ent.Add<TComp1>(TComp1.Create(1, 1));
+  {$IFNDEF FPC}
   MyAssert(ent.Get<TComp1>.x = 1);
+  {$ENDIF}
   MyAssert(ent.Has<TComp1> = true);
   MyAssert(ent.TryGet<TComp1>(c1) = true);
   MyAssert(c1.x = 1);
@@ -81,8 +89,10 @@ begin
   MyAssert(ent.Has<TComp2> = true);
   MyAssert(ent.TryGet<TComp2>(c2) = true);
   MyAssert(c2.s = 'test');
+  {$IFNDEF FPC}
   MyAssert(ent.Get<TComp1>.x = 1);
   MyAssert(ent.Get<TComp2>.s = 'test');
+  {$ENDIF}
   w.Free;
 end;
 
@@ -121,9 +131,11 @@ begin
       ent.remove<TComp1>;
   end;
   i := 0;
+  {$IFNDEF FPC}
   for ent in w do
     inc(i, ent.Get<TComp1>.x);
   MyAssert(i = 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 - 5);
+  {$ENDIF}
   w.Free;
 end;
 
@@ -139,6 +151,7 @@ begin
     ent := w.NewEntity;
     ent.Add<TComp1>(TComp1.Create(i, 1));
   end;
+  {$IFNDEF FPC}
   for ent in w do
     if ent.Get<TComp1>.x mod 2 = 0 then
       ent.RemoveAll;
@@ -147,6 +160,7 @@ begin
     inc(i, ent.Get<TComp1>.x);
 
   MyAssert(i = 1 + 3 + 5 + 7 + 9);
+  {$ENDIF}
   w.Free;
 end;
 
@@ -167,6 +181,7 @@ begin
       ent := w.NewEntity;
       ent.Add<TComp1>(TComp1.Create(i, 1));
     end;
+    {$IFNDEF FPC}
     for ent in w do
       if ent.Get<TComp1>.x in [7, 8] then
         ent.RemoveAll
@@ -176,6 +191,7 @@ begin
     for ent in w do
       inc(i, ent.Get<TComp1>.x);
     MyAssert(i = 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10);
+    {$ENDIF}
   end;
 
   w.Free;
@@ -216,6 +232,20 @@ begin
   aset.Free;
 end;
 
+{$IFDEF FPC}
+function SumItems(f: TECSFilter): integer;
+var
+  ent: TECSEntity;
+  c1: TComp1;
+begin
+  Result := 0;
+  for ent in f do
+  begin
+    ent.TryGet<TComp1>(c1);
+    Result := Result + c1.x
+  end;
+end;
+{$ELSE}
 function SumItems(f: TECSFilter): integer;
 var
   ent: TECSEntity;
@@ -224,6 +254,7 @@ begin
   for ent in f do
     Result := Result + ent.Get<TComp1>.x
 end;
+{$ENDIF}
 
 procedure TestFilters;
 var
@@ -296,7 +327,9 @@ begin
   systems.Execute;
   MyAssert(test.ExecuteCalled = 1);
 
+  {$IFNDEF FPC}
   MyAssert(ent.Get<TComp1>.x = 1 + 10 + 10);
+  {$ENDIF}
 
   MyAssert(test.TeardownCalled = 0);
   systems.Teardown;

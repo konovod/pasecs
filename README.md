@@ -290,9 +290,10 @@ In a folder `bench` there is a tests suite and benchmark, you can see it for som
  - [ ] nonoengine integration example, maybe example with VCL
 ### Mid-term
  - [ ] SingleFrame components
- - [ ] Multiple components
  - [ ] Singleton components
  - [ ] Callbacks on adding\deleting components
+ - [ ] Multiple components
+ - [ ] Android target (`[weak]` annotations etc)
  - [ ] Switch to sparsesets? archetypes?
 
 ## Contributors

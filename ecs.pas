@@ -21,7 +21,9 @@ type
   TECSEntity = record
     World: TECSWorld;
     id: TEntityID;
+    {$IFNDEF FPC}
     function Get<T>: T;
+    {$ENDIF}
     function TryGet<T>(out comp: T): Boolean;
     function GetPtr<T>: Pointer;
     function Has<T>: Boolean;
@@ -71,7 +73,9 @@ type
     procedure vRemoveIfExists(id: TEntityID); override;
     procedure AddDontCheck(id: TEntityID; item: T);
     // public
+    {$IFNDEF FPC}
     function Get(id: TEntityID): T;
+    {$ENDIF}
     function TryGet(id: TEntityID; out comp: T): Boolean;
     function GetPtr(id: TEntityID): Pointer;
     procedure Update(id: TEntityID; item: T);
@@ -242,10 +246,12 @@ begin
   end;
 end;
 
+{$IFNDEF FPC}
 function TECSStorage<T>.Get(id: TEntityID): T;
 begin
   Result := payload[FindIndex(id)]
 end;
+{$ENDIF}
 
 function TGenericECSStorage.GetEnumerator: TStorageEntityEnumerator;
 begin
@@ -376,10 +382,12 @@ begin
   World.GetStorage<T>.AddOrUpdate(id, item);
 end;
 
+{$IFNDEF FPC}
 function TECSEntity.Get<T>: T;
 begin
   Result := World.GetStorage<T>.Get(id);
 end;
+{$ENDIF}
 
 function TECSEntity.TryGet<T>(out comp: T): Boolean;
 begin
@@ -630,7 +638,7 @@ end;
 function TECSFilter.Exclude<T>: TECSFilter;
 begin
   if included.Contains(TECSStorage<T>) then
-    raise Exception.Create('Same type' + TECSStorage<T>.ComponentName +
+    raise Exception.Create('Same type' + (TECSStorage<T>.ComponentName) +
       ' cannot be included and excluded to filter');
   excluded.Add(TECSStorage<T>);
   Result := Self;
@@ -666,7 +674,7 @@ end;
 function TECSFilter.Include<T>: TECSFilter;
 begin
   if excluded.Contains(TECSStorage<T>) then
-    raise Exception.Create('Same type' + TECSStorage<T>.ComponentName +
+    raise Exception.Create('Same type' + (TECSStorage<T>.ComponentName) +
       ' cannot be included and excluded to filter');
   included.Add(TECSStorage<T>);
   Result := Self;
