@@ -17,4 +17,4 @@ jobs:
       - name: Compile tests
         run: lazbuild bench/benchmark.lpr
       - name: Run tests
-        run: bench/benchmark.exe
+        run: bench/benchmark
