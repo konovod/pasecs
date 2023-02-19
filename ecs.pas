@@ -154,8 +154,8 @@ type
         aInner: TGenericECSStorage.TStorageEntityEnumerator);
     end;
   public
-    procedure Include<T>;
-    procedure Exclude<T>;
+    function Include<T>: TECSFilter;
+    function Exclude<T>: TECSFilter;
     // /// /    procedure Either<T1, T2>;overload;
     // /// /    procedure Either<T1, T2, T3>;overload;
     function GetEnumerator: TFilterEntityEnumerator;
@@ -549,12 +549,13 @@ begin
   inherited;
 end;
 
-procedure TECSFilter.Exclude<T>;
+function TECSFilter.Exclude<T>: TECSFilter;
 begin
   if included.Contains(TECSStorage<T>) then
     raise Exception.Create('Same type' + TECSStorage<T>.ComponentName +
       ' cannot be included and excluded to filter');
-  excluded.Add(TECSStorage<T>)
+  excluded.Add(TECSStorage<T>);
+  Result := Self;
 end;
 
 function TECSFilter.GetEnumerator: TFilterEntityEnumerator;
@@ -563,8 +564,7 @@ var
   typ: TStorageClass;
   store, min_storage: TGenericECSStorage;
 begin
-  if included.Count = 0 then
-    raise Exception.Create('Include list for filter cannot be empty');
+  min_storage := nil;
   min := MaxInt;
   for typ in included do
   begin
@@ -580,15 +580,18 @@ begin
       min_storage := store;
     end;
   end;
+  if not Assigned(min_storage) then
+    raise Exception.Create('Include list for filter cannot be empty');
   Result := TFilterEntityEnumerator.Create(Self, min_storage.GetEnumerator)
 end;
 
-procedure TECSFilter.Include<T>;
+function TECSFilter.Include<T>: TECSFilter;
 begin
   if excluded.Contains(TECSStorage<T>) then
     raise Exception.Create('Same type' + TECSStorage<T>.ComponentName +
       ' cannot be included and excluded to filter');
-  included.Add(TECSStorage<T>)
+  included.Add(TECSStorage<T>);
+  Result := Self;
 end;
 
 function TECSFilter.Satisfied(Entity: TECSEntity): Boolean;

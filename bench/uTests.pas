@@ -25,6 +25,10 @@ type
     constructor Create(s: string);
   end;
 
+  TComp3 = record
+    class function It: TComp3; static;
+  end;
+
 procedure MyAssert(value: boolean);
 begin
   if value then
@@ -193,7 +197,7 @@ begin
   sum := 0;
   for i in aset do
     inc(sum, i);
-  MyAssert(sum = 123+124);
+  MyAssert(sum = 123 + 124);
 
   MyAssert(aset.Contains(123) = true);
   MyAssert(aset.Contains(124) = true);
@@ -212,6 +216,39 @@ begin
   aset.Free;
 end;
 
+function SumItems(f: TECSFilter): Integer;
+var
+  ent: TECSEntity;
+begin
+  Result := 0;
+  for ent in f do
+    Result := Result + ent.Get<TComp1>.x
+end;
+  
+
+procedure TestFilters;
+var
+  f: TECSFilter;
+  w: TECSWorld;
+  i: integer;
+  ent: TECSEntity;
+begin
+  w := TECSWorld.Create;
+  for i := 1 to 10 do
+  begin
+    ent := w.NewEntity;
+    ent.Add<TComp1>(TComp1.Create(i, 1));
+    if i mod 3 = 0 then
+      ent.Add<TComp2>(TComp2.Create('test'));
+    if i in [5, 6] then
+      ent.Add<TComp3>(TComp3.It)
+  end;
+  f := w.Filter.Include<TComp2>;
+  MyAssert(SumItems(f) = 3+6+9);
+  f.Free;
+  w.Free;
+end;
+
 procedure DoTests;
 begin
   writeln('Starting tests suite:');
@@ -222,6 +259,7 @@ begin
   TestWorldIterationWithDeletion;
   TestWorldIterationWithAdditionDeletion;
   TestSet;
+  TestFilters;
   writeln;
   writeln('Tests passed');
 end;
@@ -239,6 +277,13 @@ end;
 constructor TComp2.Create(s: string);
 begin
   Self.s := s
+end;
+
+{ TComp3 }
+
+class function TComp3.It: TComp3;
+begin
+
 end;
 
 end.
