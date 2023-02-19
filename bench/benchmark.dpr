@@ -12,6 +12,7 @@ uses
 begin
   ReportMemoryLeaksOnShutdown := True;
   DoTests;
+  DoBenchmarks;
   readln;
 
 end.

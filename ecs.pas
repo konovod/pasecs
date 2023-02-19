@@ -28,11 +28,11 @@ type
     function GetPtr<T>: Pointer;
     function Has<T>: Boolean;
     procedure Add<T>(item: T);
-    procedure Replace<T>(item: T);
+    procedure Update<T>(item: T);
+    procedure AddOrUpdate<T>(item: T);
     procedure Remove<T>;
     procedure RemoveAll;
     function ToString: string;
-    constructor Create(aWorld: TECSWorld; aid: TEntityID);
   end;
 
   TGenericECSStorage = class
@@ -74,8 +74,9 @@ type
     function Get(id: TEntityID): T;
     function TryGet(id: TEntityID; out comp: T): Boolean;
     function GetPtr(id: TEntityID): Pointer;
-    procedure Replace(id: TEntityID; item: T);
-    procedure AddOrReplace(id: TEntityID; item: T);
+    procedure Update(id: TEntityID; item: T);
+    procedure AddOrUpdate(id: TEntityID; item: T);
+    procedure Add(id: TEntityID; item: T);
     procedure Remove(id: TEntityID);
   public
     destructor Destroy; override;
@@ -267,6 +268,21 @@ begin
   Result := TryFindIndex(id, i)
 end;
 
+procedure TECSStorage<T>.Add(id: TEntityID; item: T);
+var
+  i: Integer;
+  ent: TECSEntity;
+begin
+  if TryFindIndex(id, i) then
+  begin
+    ent.World := World;
+    ent.id := id;
+    raise Exception.Create('Component '+ComponentName+' already added to '+ent.ToString)
+  end
+  else
+    AddDontCheck(id, item)
+end;
+
 procedure TECSStorage<T>.AddDontCheck(id: TEntityID; item: T);
 begin
   if dense_used >= length(dense) then
@@ -284,12 +300,12 @@ begin
     World.CountComponents.Add(id, 1);
 end;
 
-procedure TECSStorage<T>.Replace(id: TEntityID; item: T);
+procedure TECSStorage<T>.Update(id: TEntityID; item: T);
 begin
   payload[FindIndex(id)] := item;
 end;
 
-procedure TECSStorage<T>.AddOrReplace(id: TEntityID; item: T);
+procedure TECSStorage<T>.AddOrUpdate(id: TEntityID; item: T);
 var
   i: Integer;
 begin
@@ -328,10 +344,9 @@ end;
 
 { TEntity }
 
-constructor TECSEntity.Create(aWorld: TECSWorld; aid: TEntityID);
+procedure TECSEntity.AddOrUpdate<T>(item: T);
 begin
-  Self.World := aWorld;
-  Self.id := aid;
+  World.GetStorage<T>.AddOrUpdate(id, item);
 end;
 
 function TECSEntity.Get<T>: T;
@@ -356,12 +371,12 @@ end;
 
 procedure TECSEntity.Add<T>(item: T);
 begin
-  World.GetStorage<T>.AddOrReplace(id, item);
+  World.GetStorage<T>.Add(id, item);
 end;
 
-procedure TECSEntity.Replace<T>(item: T);
+procedure TECSEntity.Update<T>(item: T);
 begin
-  World.GetStorage<T>.Replace(id, item);
+  World.GetStorage<T>.Update(id, item);
 end;
 
 procedure TECSEntity.Remove<T>;

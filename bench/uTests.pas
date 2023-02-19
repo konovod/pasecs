@@ -53,7 +53,7 @@ begin
   MyAssert(e1.Get<TComp2>.s = 'e1');
   MyAssert(e2.Get<TComp2>.s = 'e2');
 
-  e1.Replace<TComp2>(TComp2.Create('abc'));
+  e1.Update<TComp2>(TComp2.Create('abc'));
   MyAssert(e1.Get<TComp2>.s = 'abc');
 
   e1.remove<TComp2>;
