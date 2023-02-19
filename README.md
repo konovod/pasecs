@@ -1,3 +1,6 @@
+[![Linux CI](https://github.com/konovod/pasecs/actions/workflows/linux.yml/badge.svg)](https://github.com/konovod/pasecs/actions/workflows/linux.yml)
+[![Windows CI](https://github.com/konovod/pasecs/actions/workflows/windows.yml/badge.svg)](https://github.com/konovod/pasecs/actions/workflows/windows.yml) 
+[![MacOSX CI](https://github.com/konovod/pasecs/actions/workflows/macosx.yml/badge.svg)](https://github.com/konovod/pasecs/actions/workflows/macosx.yml) 
 # PasECS
 
 ##### Table of Contents  
@@ -26,7 +29,7 @@
 
 This is a ECS library for Delphi/FreePascal.
 
-Currently, FPC isn't supported - due to [bug](https://gitlab.com/freepascal.org/fpc/source/-/issues/40155) `Get` method don't compile, and without it it's pretty cumbersome to use.
+Currently, FPC is partially supported - due to [bug](https://gitlab.com/freepascal.org/fpc/source/-/issues/40155) `Get` method don't compile, and without it it's pretty cumbersome to use.
 
 Supported Delphi version: I've tested it on Delphi 11.2, should work on older versions with generics too. Win32 and Win64 works, Linux should work too, Android is planned.
 
@@ -288,6 +291,7 @@ In a folder `bench` there is a tests suite and benchmark, you can see it for som
  - [ ] `if World.Exists<T> then...`
  - [ ] check correctness when deleting entities during iteration
  - [ ] nonoengine integration example, maybe example with VCL
+ - [ ] CI with FPC
 ### Mid-term
  - [ ] SingleFrame components
  - [ ] Singleton components

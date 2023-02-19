@@ -1,0 +1,17 @@
+name: Windows CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Install FPC
+        run: |
+          choco install lazarus
+      - uses: actions/checkout@v2
+      - name: Run tests
+        run: lazbuild bench/benchmark.lpr
