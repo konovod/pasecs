@@ -97,10 +97,12 @@ type
     procedure Remove(x: T);
     function Contains(x: T): Boolean;
     function GetEnumerator: TEnumerator<T>;
+    function Count: Integer;
   end;
 
   { TWorld }
 
+  TECSFilter = class;
   TECSWorld = class
   protected
     cur_id: TEntityID;
@@ -109,7 +111,6 @@ type
     function GetStorage<T>: TECSStorage<T>;
     function Count<T>: Integer;
 
-    // function Filter: TECSFilter;
   type
     TWorldEntityEnumerator = class
       World: TECSWorld;
@@ -124,6 +125,7 @@ type
     end;
 
   public
+    function Filter: TECSFilter;
     function NewEntity: TECSEntity;
     constructor Create;
     destructor Destroy; override;
@@ -134,26 +136,32 @@ type
   TECSFilter = class
   protected
     included: TSet<TStorageClass>;
+    excluded: TSet<TStorageClass>;
+    // optional
     World: TECSWorld;
 
   type
-    // TWorldEntityEnumerator = class
-    // World: TECSFilter;
-    // inner: TEnumerator<TEntityID>;
-    // private
-    // function GetCurrent: TECSEntity;
-    // public
-    // function MoveNext: Boolean;
-    // destructor Destroy; override;
-    // property Current: TECSEntity read GetCurrent;
-    // constructor Create(aWorld: TECSWorld);
-    // end;
+    TFilterEntityEnumerator = class
+      Filter: TECSFilter;
+      inner: TGenericECSStorage.TStorageEntityEnumerator;
+    private
+      function GetCurrent: TECSEntity;
+    public
+      function MoveNext: Boolean;
+      destructor Destroy; override;
+      property Current: TECSEntity read GetCurrent;
+      constructor Create(aFilter: TECSFilter;
+        aInner: TGenericECSStorage.TStorageEntityEnumerator);
+    end;
   public
-    // procedure Include<T>;
-    // procedure Exclude<T1, T2, T3>; overload;
+    procedure Include<T>;
+    procedure Exclude<T>;
     // /// /    procedure Either<T1, T2>;overload;
     // /// /    procedure Either<T1, T2, T3>;overload;
-    // function GetEnumerator: TFilterEntityEnumerator;
+    function GetEnumerator: TFilterEntityEnumerator;
+    function Satisfied(Entity: TECSEntity): Boolean;
+    constructor Create(aWorld: TECSWorld);
+    destructor Destroy; override;
   end;
 
 const
@@ -421,6 +429,11 @@ begin
   inherited Destroy;
 end;
 
+function TECSWorld.Filter: TECSFilter;
+begin
+  Result := TECSFilter.Create(Self)
+end;
+
 { TGenericECSStorage }
 
 class function TGenericECSStorage.ComponentName: string;
@@ -494,6 +507,11 @@ begin
   Result := data.ContainsKey(x);
 end;
 
+function TSet<T>.Count: Integer;
+begin
+  Result := data.Count
+end;
+
 constructor TSet<T>.Create;
 begin
   data := TDictionary<T, TEmptyRecord>.Create;
@@ -513,6 +531,119 @@ end;
 procedure TSet<T>.Remove(x: T);
 begin
   data.Remove(x)
+end;
+
+{ TECSFilter }
+
+constructor TECSFilter.Create(aWorld: TECSWorld);
+begin
+  World := aWorld;
+  included := TSet<TStorageClass>.Create;
+  excluded := TSet<TStorageClass>.Create;
+end;
+
+destructor TECSFilter.Destroy;
+begin
+  included.Free;
+  excluded.Free;
+  inherited;
+end;
+
+procedure TECSFilter.Exclude<T>;
+begin
+  if included.Contains(TECSStorage<T>) then
+    raise Exception.Create('Same type' + TECSStorage<T>.ComponentName +
+      ' cannot be included and excluded to filter');
+  excluded.Add(TECSStorage<T>)
+end;
+
+function TECSFilter.GetEnumerator: TFilterEntityEnumerator;
+var
+  min: Integer;
+  typ: TStorageClass;
+  store, min_storage: TGenericECSStorage;
+begin
+  if included.Count = 0 then
+    raise Exception.Create('Include list for filter cannot be empty');
+  min := MaxInt;
+  for typ in included do
+  begin
+    if not World.storages.TryGetValue(typ, store) then
+    begin
+      // TODO - always empty enumerator
+      raise Exception.Create('Component ' + typ.ComponentName +
+        ' was not added to world, cannot create filter');
+    end;
+    if store.dense_used < min then
+    begin
+      min := store.dense_used;
+      min_storage := store;
+    end;
+  end;
+  Result := TFilterEntityEnumerator.Create(Self, min_storage.GetEnumerator)
+end;
+
+procedure TECSFilter.Include<T>;
+begin
+  if excluded.Contains(TECSStorage<T>) then
+    raise Exception.Create('Same type' + TECSStorage<T>.ComponentName +
+      ' cannot be included and excluded to filter');
+  included.Add(TECSStorage<T>)
+end;
+
+function TECSFilter.Satisfied(Entity: TECSEntity): Boolean;
+var
+  store: TGenericECSStorage;
+  typ: TStorageClass;
+  Count: Integer;
+begin
+  Result := false;
+  if not World.CountComponents.TryGetValue(Entity.id, Count) then
+    exit;
+  if Count < included.Count then
+    exit;
+  for typ in included do
+  begin
+    if not World.storages.TryGetValue(typ, store) then
+      exit;
+    if not store.Has(Entity.id) then
+      exit;
+  end;
+  for typ in excluded do
+  begin
+    if not World.storages.TryGetValue(typ, store) then
+      continue;
+    if store.Has(Entity.id) then
+      exit;
+  end;
+  Result := True;
+end;
+
+{ TECSFilter.TFilterEntityEnumerator }
+
+constructor TECSFilter.TFilterEntityEnumerator.Create(aFilter: TECSFilter;
+  aInner: TGenericECSStorage.TStorageEntityEnumerator);
+begin
+  Filter := aFilter;
+  inner := aInner;
+end;
+
+destructor TECSFilter.TFilterEntityEnumerator.Destroy;
+begin
+  inner.Free;
+  inherited;
+end;
+
+function TECSFilter.TFilterEntityEnumerator.GetCurrent: TECSEntity;
+begin
+  Result := inner.GetCurrent
+end;
+
+function TECSFilter.TFilterEntityEnumerator.MoveNext: Boolean;
+begin
+  Result := inner.MoveNext;
+  while Result and not Filter.Satisfied(inner.Current) do
+    Result := inner.MoveNext;
 end;
 
 end.
