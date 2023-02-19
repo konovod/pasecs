@@ -13,5 +13,4 @@ begin
   ReportMemoryLeaksOnShutdown := True;
   DoTests;
   readln;
-
 end.

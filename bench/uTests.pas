@@ -153,7 +153,6 @@ var
   cycle, i: integer;
 begin
   w := TECSWorld.Create;
-
   for cycle := 1 to 10 do
   begin
     if cycle in [7,8] then
@@ -178,6 +177,27 @@ begin
   w.Free;
 end;
 
+procedure TestSet;
+var
+  aset: TSet<Integer>;
+begin
+  aset := TSet<Integer>.Create;
+  MyAssert(aset.Contains(123) = false);
+  MyAssert(aset.Contains(124) = false);
+  aset.Add(123);
+  MyAssert(aset.Contains(123) = true);
+  MyAssert(aset.Contains(124) = false);
+  aset.Add(124);
+  MyAssert(aset.Contains(123) = true);
+  MyAssert(aset.Contains(124) = true);
+  aset.Remove(123);
+  MyAssert(aset.Contains(123) = false);
+  MyAssert(aset.Contains(124) = true);
+  aset.Remove(124);
+  MyAssert(aset.Contains(123) = false);
+  MyAssert(aset.Contains(124) = false);
+  aset.Free;
+end;
 
 
 procedure DoTests;
@@ -189,6 +209,7 @@ begin
   TestWorldIteration;
   TestWorldIterationWithDeletion;
   TestWorldIterationWithAdditionDeletion;
+  TestSet;
   writeln;
   writeln('Tests passed');
 end;

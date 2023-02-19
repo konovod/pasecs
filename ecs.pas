@@ -85,6 +85,21 @@ type
 
   TStorageClass = class of TGenericECSStorage;
 
+  TEmptyRecord = record
+  end;
+
+  TSet<T> = class
+  private
+    data: TDictionary<T, TEmptyRecord>;
+  public
+    constructor Create;
+    destructor Destroy; override;
+    procedure Add(x: T);
+    procedure Remove(x: T);
+    function Contains(x: T): Boolean;
+  end;
+
+
   { TWorld }
 
   TECSWorld = class
@@ -114,6 +129,10 @@ type
     procedure Clear;
     function GetEnumerator: TWorldEntityEnumerator;
   end;
+
+const
+  NOTHING : TEmptyRecord = ();
+
 
 implementation
 
@@ -432,6 +451,35 @@ end;
 function TECSWorld.TWorldEntityEnumerator.MoveNext: Boolean;
 begin
   Result := inner.MoveNext;
+end;
+
+
+{ TSet<T> }
+
+procedure TSet<T>.Add(x: T);
+begin
+  Data.Add(x, NOTHING);
+end;
+
+function TSet<T>.Contains(x: T): Boolean;
+begin
+ Result := Data.ContainsKey(x);
+end;
+
+constructor TSet<T>.Create;
+begin
+  Data := TDictionary<T, TEmptyRecord>.Create;
+end;
+
+destructor TSet<T>.Destroy;
+begin
+  Data.Free;
+  inherited;
+end;
+
+procedure TSet<T>.Remove(x: T);
+begin
+  Data.Remove(x)
 end;
 
 end.
