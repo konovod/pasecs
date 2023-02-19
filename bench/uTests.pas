@@ -109,17 +109,17 @@ var
   i: integer;
 begin
   w := TECSWorld.Create;
-  for I := 1 to 10 do
+  for i := 1 to 10 do
   begin
     ent := w.NewEntity;
     ent.Add<TComp1>(TComp1.Create(i, 1));
-    if i = 5  then
-      ent.Remove<TComp1>;
+    if i = 5 then
+      ent.remove<TComp1>;
   end;
   i := 0;
   for ent in w do
     inc(i, ent.Get<TComp1>.x);
-  MyAssert(i = 1+2+3+4+5+6+7+8+9+10 - 5);
+  MyAssert(i = 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 - 5);
   w.Free;
 end;
 
@@ -130,19 +130,19 @@ var
   i: integer;
 begin
   w := TECSWorld.Create;
-  for I := 1 to 10 do
+  for i := 1 to 10 do
   begin
     ent := w.NewEntity;
     ent.Add<TComp1>(TComp1.Create(i, 1));
   end;
   for ent in w do
-    if ent.Get<TComp1>.x mod 2 = 0  then
+    if ent.Get<TComp1>.x mod 2 = 0 then
       ent.RemoveAll;
   i := 0;
   for ent in w do
     inc(i, ent.Get<TComp1>.x);
 
-  MyAssert(i = 1+3+5+7+9);
+  MyAssert(i = 1 + 3 + 5 + 7 + 9);
   w.Free;
 end;
 
@@ -155,23 +155,23 @@ begin
   w := TECSWorld.Create;
   for cycle := 1 to 10 do
   begin
-    if cycle in [7,8] then
+    if cycle in [7, 8] then
       continue;
     w.Clear;
-    for I := 1 to 10 do
+    for i := 1 to 10 do
     begin
       ent := w.NewEntity;
       ent.Add<TComp1>(TComp1.Create(i, 1));
     end;
     for ent in w do
-      if ent.Get<TComp1>.x in [7,8]  then
+      if ent.Get<TComp1>.x in [7, 8] then
         ent.RemoveAll
-      else if ent.Get<TComp1>.x = Cycle then
-        w.NewEntity.Add<TComp1>(TComp1.Create(7+8, 1));
+      else if ent.Get<TComp1>.x = cycle then
+        w.NewEntity.Add<TComp1>(TComp1.Create(7 + 8, 1));
     i := 0;
     for ent in w do
       inc(i, ent.Get<TComp1>.x);
-    MyAssert(i = 1+2+3+4+5+6+7+8+9+10);
+    MyAssert(i = 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10);
   end;
 
   w.Free;
@@ -179,26 +179,38 @@ end;
 
 procedure TestSet;
 var
-  aset: TSet<Integer>;
+  aset: TSet<integer>;
+  sum, i: integer;
 begin
-  aset := TSet<Integer>.Create;
+  aset := TSet<integer>.Create;
   MyAssert(aset.Contains(123) = false);
   MyAssert(aset.Contains(124) = false);
   aset.Add(123);
   MyAssert(aset.Contains(123) = true);
   MyAssert(aset.Contains(124) = false);
   aset.Add(124);
+
+  sum := 0;
+  for i in aset do
+    inc(sum, i);
+  MyAssert(sum = 123+124);
+
   MyAssert(aset.Contains(123) = true);
   MyAssert(aset.Contains(124) = true);
-  aset.Remove(123);
+  aset.remove(123);
   MyAssert(aset.Contains(123) = false);
   MyAssert(aset.Contains(124) = true);
-  aset.Remove(124);
+  aset.remove(124);
   MyAssert(aset.Contains(123) = false);
   MyAssert(aset.Contains(124) = false);
+
+  sum := 0;
+  for i in aset do
+    inc(sum, i);
+  MyAssert(sum = 0);
+
   aset.Free;
 end;
-
 
 procedure DoTests;
 begin
