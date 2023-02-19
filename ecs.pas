@@ -18,11 +18,9 @@ type
 
   { TECSEntity }
 
-  TECSEntity = object
-  protected
+  TECSEntity = record
     World: TECSWorld;
     id: TEntityID;
-  public
     function Get<T>: T;
     function TryGet<T>(out comp: T): Boolean;
     function GetPtr<T>: Pointer;
@@ -173,7 +171,7 @@ type
     FWorld: TECSWorld;
   public
     property World: TECSWorld read FWorld;
-    constructor Create(AOwner: TECSWorld); virtual; // TODO
+    constructor Create(AOwner: TECSWorld); virtual;
     procedure Init; virtual;
     function Filter: TECSFilter; virtual;
     procedure Execute; virtual;
