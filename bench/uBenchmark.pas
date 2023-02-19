@@ -283,6 +283,7 @@ begin
   // SystemComplexSelectFilter 286.01  (  3.50ms) (± 0.81%)  0.0B/op   1.04× slower
 
   world.Free;
+  writeln('Benchmark complete');
 end;
 
 { TComp1 }

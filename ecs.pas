@@ -53,6 +53,8 @@ type
     World: TECSWorld;
     dense: array of TEntityID;
     sparse: TDictionary<TEntityID, Integer>;
+    CacheIndex: Integer;
+    CacheID: TEntityID;
     procedure vRemoveIfExists(id: TEntityID); virtual; abstract;
     class function ComponentName: string;
     function TryFindIndex(id: TEntityID; out i: Integer): Boolean;
@@ -210,6 +212,8 @@ procedure TGenericECSStorage.Clear;
 begin
   dense_used := 0;
   sparse.Clear;
+  CacheIndex := -1;
+  CacheID := NO_ENTITY;
 end;
 
 constructor TECSStorage<T>.Create(aWorld: TECSWorld);
@@ -218,6 +222,8 @@ begin
   SetLength(dense, 1);
   SetLength(payload, 1);
   sparse := TDictionary<TEntityID, Integer>.Create;
+  CacheIndex := -1;
+  CacheID := NO_ENTITY;
 end;
 
 destructor TECSStorage<T>.Destroy;
@@ -228,7 +234,14 @@ end;
 
 function TGenericECSStorage.FindIndex(id: TEntityID): Integer;
 begin
-  Result := sparse[id]
+  if id = CacheID then
+    Result := CacheIndex
+  else
+  begin
+    Result := sparse[id];
+    CacheIndex := Result;
+    CacheID := id;
+  end;
 end;
 
 function TECSStorage<T>.Get(id: TEntityID): T;
@@ -244,7 +257,18 @@ end;
 function TGenericECSStorage.TryFindIndex(id: TEntityID; out i: Integer)
   : Boolean;
 begin
-  Result := sparse.TryGetValue(id, i)
+  if id = CacheID then
+  begin
+    Result := True;
+    i := CacheIndex;
+    exit;
+  end;
+  Result := sparse.TryGetValue(id, i);
+  if Result then
+  begin
+    CacheIndex := i;
+    CacheID := id;
+  end;
 end;
 
 function TECSStorage<T>.TryGet(id: TEntityID; out comp: T): Boolean;
@@ -295,6 +319,8 @@ begin
   payload[dense_used - 1] := item;
   dense[dense_used - 1] := id;
   sparse.Add(id, dense_used - 1);
+  CacheIndex := dense_used - 1;
+  CacheID := id;
   if World.CountComponents.ContainsKey(id) then
     World.CountComponents[id] := World.CountComponents[id] + 1
   else
@@ -330,6 +356,8 @@ begin
   end;
   dec(dense_used);
   sparse.Remove(id);
+  CacheIndex := -1;
+  CacheID := NO_ENTITY;
   Count := World.CountComponents[id];
   if Count = 1 then
     World.CountComponents.Remove(id)
@@ -510,6 +538,8 @@ function TGenericECSStorage.TStorageEntityEnumerator.GetCurrent: TECSEntity;
 begin
   Result.World := parent.World;
   Result.id := parent.dense[index];
+  parent.CacheIndex := index;
+  parent.CacheID := Result.id;
 end;
 
 function TGenericECSStorage.TStorageEntityEnumerator.MoveNext: Boolean;
