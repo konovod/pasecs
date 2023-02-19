@@ -14,6 +14,6 @@ jobs:
           choco install lazarus
       - uses: actions/checkout@v2
       - name: Compile tests
-        run: C:\lazarus\lazbuild bench\benchmark.lpr
+        run: C:\lazarus\lazbuild bench\benchmark.lpr --bm=Release
       - name: Run tests
         run: bench\benchmark
