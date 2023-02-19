@@ -102,13 +102,59 @@ begin
   w.Free;
 end;
 
+procedure TestWorldIteration;
+var
+  w: TECSWorld;
+  ent: TECSEntity;
+  i: integer;
+begin
+  w := TECSWorld.Create;
+  for I := 1 to 10 do
+  begin
+    ent := w.NewEntity;
+    ent.Add<TComp1>(TComp1.Create(i, 1));
+    if i = 5  then
+      ent.Remove<TComp1>;
+  end;
+  i := 0;
+  for ent in w do
+    inc(i, ent.Get<TComp1>.x);
+  MyAssert(i = 1+2+3+4+5+6+7+8+9+10 - 5);
+  w.Free;
+end;
+
+procedure TestWorldIterationWithDeletion;
+var
+  w: TECSWorld;
+  ent: TECSEntity;
+  i: integer;
+begin
+  w := TECSWorld.Create;
+  for I := 1 to 10 do
+  begin
+    ent := w.NewEntity;
+    ent.Add<TComp1>(TComp1.Create(i, 1));
+  end;
+  for ent in w do
+    if i mod 2 = 0  then
+      ent.RemoveAll;
+  i := 0;
+  for ent in w do
+    inc(i, ent.Get<TComp1>.x);
+  MyAssert(i = 1+3+5+7+9);
+  w.Free;
+end;
+
+
+
 procedure DoTests;
 begin
   writeln('Starting tests suite:');
   SimpleTests;
   TestAddingComponents;
   TestAddAndDelete;
-
+  TestWorldIteration;
+//  TestWorldIterationWithDeletion;
   writeln;
   writeln('Tests passed');
 end;

@@ -10,6 +10,7 @@ uses
   uBenchmark in 'uBenchmark.pas';
 
 begin
+  ReportMemoryLeaksOnShutdown := True;
   DoTests;
   readln;
 
