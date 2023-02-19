@@ -136,11 +136,14 @@ begin
     ent.Add<TComp1>(TComp1.Create(i, 1));
   end;
   for ent in w do
-    if i mod 2 = 0  then
+    if ent.Get<TComp1>.x mod 2 = 0  then
       ent.RemoveAll;
   i := 0;
+//  for ent in w do
+//    writeln(ent.ToString);
   for ent in w do
     inc(i, ent.Get<TComp1>.x);
+
   MyAssert(i = 1+3+5+7+9);
   w.Free;
 end;
@@ -154,7 +157,7 @@ begin
   TestAddingComponents;
   TestAddAndDelete;
   TestWorldIteration;
-//  TestWorldIterationWithDeletion;
+  TestWorldIterationWithDeletion;
   writeln;
   writeln('Tests passed');
 end;
