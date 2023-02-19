@@ -70,7 +70,7 @@ begin
   for I := 1 to 10 do // warmup
     x();
   watch.Stop;
-  if watch.ElapsedMilliseconds >= 1000 then
+  if watch.ElapsedMilliseconds >= 500 then
   begin
     Result := watch.ElapsedMilliseconds * 100;
     exit;
