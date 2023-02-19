@@ -316,6 +316,7 @@ begin
   TestWorldIterationWithAdditionDeletion;
   TestSet;
   TestFilters;
+  TestSystems;
   writeln;
   writeln('Tests passed');
 end;
