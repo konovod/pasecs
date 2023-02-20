@@ -1,10 +1,12 @@
 program benchmark;
 
-uses ecs, uTests, uBenchmark;
+uses
+  ecs,
+  uTests,
+  uBenchmark;
 
 begin
   DoTests;
   DoBenchmarks;
   readln;
 end.
-

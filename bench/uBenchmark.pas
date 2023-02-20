@@ -43,11 +43,11 @@ procedure DoBenchmarks;
 implementation
 
 uses
-  {$IFDEF FPC}
+{$IFDEF FPC}
   stopwatch,
-  {$ELSE}
+{$ELSE}
   System.Diagnostics,
-  {$ENDIF}
+{$ENDIF}
   SysUtils;
 
 var
@@ -58,13 +58,14 @@ var
 type
   TBenchProc = procedure;
 
-
 {$IFDEF FPC}
+
 function UsedMemory: integer;
 begin
   Result := GetFPCHeapStatus.CurrHeapUsed;
 end;
 {$ELSE}
+
 function UsedMemory: integer;
 var
   state: TMemoryManagerState;
@@ -439,11 +440,11 @@ procedure TUpdateComp1.Process(e: TECSEntity);
 var
   c: TComp1;
 begin
-  {$IFDEF FPC}
+{$IFDEF FPC}
   e.TryGet<TComp1>(c);
-  {$ELSE}
+{$ELSE}
   c := e.Get<TComp1>;
-  {$ENDIF}
+{$ENDIF}
   c.x := -c.x;
   c.y := -c.y;
   e.Update<TComp1>(c);
@@ -476,11 +477,11 @@ procedure TReplaceComp1.Process(e: TECSEntity);
 var
   c: TComp1;
 begin
-  {$IFDEF FPC}
+{$IFDEF FPC}
   e.TryGet<TComp1>(c);
-  {$ELSE}
+{$ELSE}
   c := e.Get<TComp1>;
-  {$ENDIF}
+{$ENDIF}
   e.Remove<TComp1>;
   e.Add<TComp5>(TComp5.Create(-c.x, -c.y));
 end;
@@ -496,11 +497,11 @@ procedure TReplaceComp5.Process(e: TECSEntity);
 var
   c: TComp5;
 begin
-  {$IFDEF FPC}
+{$IFDEF FPC}
   e.TryGet<TComp5>(c);
-  {$ELSE}
+{$ELSE}
   c := e.Get<TComp5>;
-  {$ENDIF}
+{$ENDIF}
   e.Remove<TComp5>;
   e.Add<TComp1>(TComp1.Create(-c.vx, -c.vy));
 end;

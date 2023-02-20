@@ -20,10 +20,10 @@ type
 
   TECSEntity = record
     World: TECSWorld;
-    id: TEntityID;
-    {$IFNDEF FPC}
+    Id: TEntityID;
+{$IFNDEF FPC}
     function Get<T>: T;
-    {$ENDIF}
+{$ENDIF}
     function TryGet<T>(out comp: T): Boolean;
     function GetPtr<T>: Pointer;
     function Has<T>: Boolean;
@@ -38,8 +38,8 @@ type
   TGenericECSStorage = class
   protected type
     TStorageEntityEnumerator = class
-      parent: TGenericECSStorage;
-      index: Integer;
+      Parent: TGenericECSStorage;
+      Index: Integer;
     private
       function GetCurrent: TECSEntity;
     public
@@ -49,18 +49,18 @@ type
     end;
 
   var
-    dense_used: Integer;
+    DenseUsed: Integer;
     World: TECSWorld;
-    dense: array of TEntityID;
-    sparse: TDictionary<TEntityID, Integer>;
+    Dense: array of TEntityID;
+    Sparse: TDictionary<TEntityID, Integer>;
     CacheIndex: Integer;
     CacheID: TEntityID;
-    procedure vRemoveIfExists(id: TEntityID); virtual; abstract;
+    procedure vRemoveIfExists(Id: TEntityID); virtual; abstract;
     class function ComponentName: string;
-    function TryFindIndex(id: TEntityID; out i: Integer): Boolean;
-    function FindIndex(id: TEntityID): Integer;
+    function TryFindIndex(Id: TEntityID; out i: Integer): Boolean;
+    function FindIndex(Id: TEntityID): Integer;
     function GetEnumerator: TStorageEntityEnumerator;
-    function Has(id: TEntityID): Boolean;
+    function Has(Id: TEntityID): Boolean;
     procedure Clear;
   end;
 
@@ -68,20 +68,20 @@ type
 
   TECSStorage<T> = class(TGenericECSStorage)
   protected
-    payload: array of T;
+    Payload: array of T;
     constructor Create(aWorld: TECSWorld);
-    procedure vRemoveIfExists(id: TEntityID); override;
-    procedure AddDontCheck(id: TEntityID; item: T);
+    procedure vRemoveIfExists(Id: TEntityID); override;
+    procedure AddDontCheck(Id: TEntityID; item: T);
     // public
-    {$IFNDEF FPC}
-    function Get(id: TEntityID): T;
-    {$ENDIF}
-    function TryGet(id: TEntityID; out comp: T): Boolean;
-    function GetPtr(id: TEntityID): Pointer;
-    procedure Update(id: TEntityID; item: T);
-    procedure AddOrUpdate(id: TEntityID; item: T);
-    procedure Add(id: TEntityID; item: T);
-    procedure Remove(id: TEntityID);
+{$IFNDEF FPC}
+    function Get(Id: TEntityID): T;
+{$ENDIF}
+    function TryGet(Id: TEntityID; out comp: T): Boolean;
+    function GetPtr(Id: TEntityID): Pointer;
+    procedure Update(Id: TEntityID; item: T);
+    procedure AddOrUpdate(Id: TEntityID; item: T);
+    procedure Add(Id: TEntityID; item: T);
+    procedure Remove(Id: TEntityID);
   public
     destructor Destroy; override;
   end;
@@ -94,7 +94,7 @@ type
 
   TSet<T> = class
   private
-    data: TDictionary<T, TEmptyRecord>;
+    Data: TDictionary<T, TEmptyRecord>;
   public
     constructor Create;
     destructor Destroy; override;
@@ -111,8 +111,8 @@ type
 
   TECSWorld = class
   protected
-    cur_id: TEntityID;
-    storages: TDictionary<TStorageClass, TGenericECSStorage>;
+    CurId: TEntityID;
+    Storages: TDictionary<TStorageClass, TGenericECSStorage>;
     CountComponents: TDictionary<TEntityID, Integer>;
     function GetStorage<T>: TECSStorage<T>;
     function Count<T>: Integer;
@@ -120,7 +120,7 @@ type
   type
     TWorldEntityEnumerator = class
       World: TECSWorld;
-      inner: TEnumerator<TEntityID>;
+      Inner: TEnumerator<TEntityID>;
     private
       function GetCurrent: TECSEntity;
     public
@@ -141,15 +141,15 @@ type
 
   TECSFilter = class
   protected
-    included: TSet<TStorageClass>;
-    excluded: TSet<TStorageClass>;
+    Included: TSet<TStorageClass>;
+    Excluded: TSet<TStorageClass>;
     // optional
     World: TECSWorld;
 
   type
     TFilterEntityEnumerator = class
       Filter: TECSFilter;
-      inner: TGenericECSStorage.TStorageEntityEnumerator;
+      Inner: TGenericECSStorage.TStorageEntityEnumerator;
     private
       function GetCurrent: TECSEntity;
     public
@@ -212,8 +212,8 @@ implementation
 
 procedure TGenericECSStorage.Clear;
 begin
-  dense_used := 0;
-  sparse.Clear;
+  DenseUsed := 0;
+  Sparse.Clear;
   CacheIndex := -1;
   CacheID := NO_ENTITY;
 end;
@@ -221,35 +221,36 @@ end;
 constructor TECSStorage<T>.Create(aWorld: TECSWorld);
 begin
   World := aWorld;
-  SetLength(dense, 1);
+  SetLength(Dense, 1);
   SetLength(payload, 1);
-  sparse := TDictionary<TEntityID, Integer>.Create;
+  Sparse := TDictionary<TEntityID, Integer>.Create;
   CacheIndex := -1;
   CacheID := NO_ENTITY;
 end;
 
 destructor TECSStorage<T>.Destroy;
 begin
-  sparse.Free;
+  Sparse.Free;
   inherited Destroy;
 end;
 
-function TGenericECSStorage.FindIndex(id: TEntityID): Integer;
+function TGenericECSStorage.FindIndex(Id: TEntityID): Integer;
 begin
-  if id = CacheID then
+  if Id = CacheID then
     Result := CacheIndex
   else
   begin
-    Result := sparse[id];
+    Result := Sparse[Id];
     CacheIndex := Result;
-    CacheID := id;
+    CacheID := Id;
   end;
 end;
 
 {$IFNDEF FPC}
-function TECSStorage<T>.Get(id: TEntityID): T;
+
+function TECSStorage<T>.Get(Id: TEntityID): T;
 begin
-  Result := payload[FindIndex(id)]
+  Result := payload[FindIndex(Id)]
 end;
 {$ENDIF}
 
@@ -258,165 +259,166 @@ begin
   Result := TStorageEntityEnumerator.Create(Self);
 end;
 
-function TGenericECSStorage.TryFindIndex(id: TEntityID; out i: Integer)
+function TGenericECSStorage.TryFindIndex(Id: TEntityID; out i: Integer)
   : Boolean;
 begin
-  if id = CacheID then
+  if Id = CacheID then
   begin
     Result := True;
     i := CacheIndex;
     exit;
   end;
-  Result := sparse.TryGetValue(id, i);
+  Result := Sparse.TryGetValue(Id, i);
   if Result then
   begin
     CacheIndex := i;
-    CacheID := id;
+    CacheID := Id;
   end;
 end;
 
-function TECSStorage<T>.TryGet(id: TEntityID; out comp: T): Boolean;
+function TECSStorage<T>.TryGet(Id: TEntityID; out comp: T): Boolean;
 var
   i: Integer;
 begin
-  Result := TryFindIndex(id, i);
+  Result := TryFindIndex(Id, i);
   if Result then
     comp := payload[i];
 end;
 
-function TECSStorage<T>.GetPtr(id: TEntityID): Pointer;
+function TECSStorage<T>.GetPtr(Id: TEntityID): Pointer;
 begin
-  Result := @(payload[FindIndex(id)])
+  Result := @(payload[FindIndex(Id)])
 end;
 
-function TGenericECSStorage.Has(id: TEntityID): Boolean;
+function TGenericECSStorage.Has(Id: TEntityID): Boolean;
 var
   i: Integer;
 begin
-  Result := TryFindIndex(id, i)
+  Result := TryFindIndex(Id, i)
 end;
 
-procedure TECSStorage<T>.Add(id: TEntityID; item: T);
+procedure TECSStorage<T>.Add(Id: TEntityID; item: T);
 var
   i: Integer;
   ent: TECSEntity;
 begin
-  if TryFindIndex(id, i) then
+  if TryFindIndex(Id, i) then
   begin
     ent.World := World;
-    ent.id := id;
+    ent.Id := Id;
     raise Exception.Create('Component ' + ComponentName + ' already added to ' +
       ent.ToString)
   end
   else
-    AddDontCheck(id, item)
+    AddDontCheck(Id, item)
 end;
 
-procedure TECSStorage<T>.AddDontCheck(id: TEntityID; item: T);
+procedure TECSStorage<T>.AddDontCheck(Id: TEntityID; item: T);
 begin
-  if dense_used >= length(dense) then
+  if DenseUsed >= length(Dense) then
   begin
-    SetLength(dense, length(dense) * 2);
+    SetLength(Dense, length(Dense) * 2);
     SetLength(payload, length(payload) * 2);
   end;
-  inc(dense_used);
-  payload[dense_used - 1] := item;
-  dense[dense_used - 1] := id;
-  sparse.Add(id, dense_used - 1);
-  CacheIndex := dense_used - 1;
-  CacheID := id;
-  if World.CountComponents.ContainsKey(id) then
-    World.CountComponents[id] := World.CountComponents[id] + 1
+  inc(DenseUsed);
+  payload[DenseUsed - 1] := item;
+  Dense[DenseUsed - 1] := Id;
+  Sparse.Add(Id, DenseUsed - 1);
+  CacheIndex := DenseUsed - 1;
+  CacheID := Id;
+  if World.CountComponents.ContainsKey(Id) then
+    World.CountComponents[Id] := World.CountComponents[Id] + 1
   else
-    World.CountComponents.Add(id, 1);
+    World.CountComponents.Add(Id, 1);
 end;
 
-procedure TECSStorage<T>.Update(id: TEntityID; item: T);
+procedure TECSStorage<T>.Update(Id: TEntityID; item: T);
 begin
-  payload[FindIndex(id)] := item;
+  payload[FindIndex(Id)] := item;
 end;
 
-procedure TECSStorage<T>.AddOrUpdate(id: TEntityID; item: T);
+procedure TECSStorage<T>.AddOrUpdate(Id: TEntityID; item: T);
 var
   i: Integer;
 begin
-  if TryFindIndex(id, i) then
+  if TryFindIndex(Id, i) then
     payload[i] := item
   else
-    AddDontCheck(id, item)
+    AddDontCheck(Id, item)
 end;
 
-procedure TECSStorage<T>.Remove(id: TEntityID);
+procedure TECSStorage<T>.Remove(Id: TEntityID);
 var
   Count, i: Integer;
 
 begin
-  i := FindIndex(id);
-  if i <> dense_used - 1 then
+  i := FindIndex(Id);
+  if i <> DenseUsed - 1 then
   begin
-    payload[i] := payload[dense_used - 1];
-    dense[i] := dense[dense_used - 1];
-    sparse[dense[i]] := i;
+    payload[i] := payload[DenseUsed - 1];
+    Dense[i] := Dense[DenseUsed - 1];
+    Sparse[Dense[i]] := i;
   end;
-  dec(dense_used);
-  sparse.Remove(id);
+  dec(DenseUsed);
+  Sparse.Remove(Id);
   CacheIndex := -1;
   CacheID := NO_ENTITY;
-  Count := World.CountComponents[id];
+  Count := World.CountComponents[Id];
   if Count = 1 then
-    World.CountComponents.Remove(id)
+    World.CountComponents.Remove(Id)
   else
-    World.CountComponents[id] := Count - 1;
+    World.CountComponents[Id] := Count - 1;
 end;
 
-procedure TECSStorage<T>.vRemoveIfExists(id: TEntityID);
+procedure TECSStorage<T>.vRemoveIfExists(Id: TEntityID);
 begin
-  if Has(id) then
-    Remove(id)
+  if Has(Id) then
+    Remove(Id)
 end;
 
 { TEntity }
 
 procedure TECSEntity.AddOrUpdate<T>(item: T);
 begin
-  World.GetStorage<T>.AddOrUpdate(id, item);
+  World.GetStorage<T>.AddOrUpdate(Id, item);
 end;
 
 {$IFNDEF FPC}
+
 function TECSEntity.Get<T>: T;
 begin
-  Result := World.GetStorage<T>.Get(id);
+  Result := World.GetStorage<T>.Get(Id);
 end;
 {$ENDIF}
 
 function TECSEntity.TryGet<T>(out comp: T): Boolean;
 begin
-  Result := World.GetStorage<T>.TryGet(id, comp);
+  Result := World.GetStorage<T>.TryGet(Id, comp);
 end;
 
 function TECSEntity.GetPtr<T>: Pointer;
 begin
-  Result := World.GetStorage<T>.GetPtr(id);
+  Result := World.GetStorage<T>.GetPtr(Id);
 end;
 
 function TECSEntity.Has<T>: Boolean;
 begin
-  Result := World.GetStorage<T>.Has(id);
+  Result := World.GetStorage<T>.Has(Id);
 end;
 
 procedure TECSEntity.Add<T>(item: T);
 begin
-  World.GetStorage<T>.Add(id, item);
+  World.GetStorage<T>.Add(Id, item);
 end;
 
 procedure TECSEntity.Update<T>(item: T);
 begin
-  World.GetStorage<T>.Update(id, item);
+  World.GetStorage<T>.Update(Id, item);
 end;
 
 procedure TECSEntity.Remove<T>;
 begin
-  World.GetStorage<T>.Remove(id);
+  World.GetStorage<T>.Remove(Id);
 end;
 
 procedure TECSEntity.RemoveAll;
@@ -424,21 +426,21 @@ var
   store: TGenericECSStorage;
 begin
   for store in World.storages.Values do
-    store.vRemoveIfExists(id);
-  World.CountComponents.Remove(id)
+    store.vRemoveIfExists(Id);
+  World.CountComponents.Remove(Id)
 end;
 
 function TECSEntity.ToString: string;
 var
   store: TGenericECSStorage;
 begin
-  if id = NO_ENTITY then
+  if Id = NO_ENTITY then
     Result := 'Incorrect entity'
   else
   begin
-    Result := Format('Entity(%d): [', [id]);
+    Result := Format('Entity(%d): [', [Id]);
     for store in World.storages.Values do
-      if store.Has(id) then
+      if store.Has(Id) then
         Result := Result + store.ComponentName + ',';
     if Result[length(Result)] = ',' then
       Result[length(Result)] := ']'
@@ -469,11 +471,11 @@ end;
 function TECSWorld.NewEntity: TECSEntity;
 begin
   Result.World := Self;
-  Result.id := cur_id;
-  inc(cur_id);
-  if cur_id = NO_ENTITY then
-    cur_id := 0;
-  CountComponents.Add(Result.id, 0);
+  Result.Id := CurId;
+  inc(CurId);
+  if CurId = NO_ENTITY then
+    CurId := 0;
+  CountComponents.Add(Result.Id, 0);
 end;
 
 procedure TECSWorld.Clear;
@@ -492,7 +494,7 @@ begin
   if not storages.TryGetValue(TECSStorage<T>, store) then
     Result := 0
   else
-    Result := store.dense_used;
+    Result := store.DenseUsed;
 
 end;
 
@@ -536,22 +538,22 @@ end;
 constructor TGenericECSStorage.TStorageEntityEnumerator.Create
   (aParent: TGenericECSStorage);
 begin
-  parent := aParent;
+  Parent := aParent;
   index := -1;
 end;
 
 function TGenericECSStorage.TStorageEntityEnumerator.GetCurrent: TECSEntity;
 begin
-  Result.World := parent.World;
-  Result.id := parent.dense[index];
-  parent.CacheIndex := index;
-  parent.CacheID := Result.id;
+  Result.World := Parent.World;
+  Result.Id := Parent.Dense[index];
+  Parent.CacheIndex := index;
+  Parent.CacheID := Result.Id;
 end;
 
 function TGenericECSStorage.TStorageEntityEnumerator.MoveNext: Boolean;
 begin
   inc(Index);
-  Result := index < parent.dense_used;
+  Result := index < Parent.DenseUsed;
 end;
 
 { TECSWorld.TWorldEntityEnumerator }
@@ -571,7 +573,7 @@ end;
 function TECSWorld.TWorldEntityEnumerator.GetCurrent: TECSEntity;
 begin
   Result.World := World;
-  Result.id := inner.Current;
+  Result.Id := inner.Current;
 end;
 
 function TECSWorld.TWorldEntityEnumerator.MoveNext: Boolean;
@@ -660,9 +662,9 @@ begin
       raise Exception.Create('Component ' + typ.ComponentName +
         ' was not added to world, cannot create filter');
     end;
-    if store.dense_used < min then
+    if store.DenseUsed < min then
     begin
-      min := store.dense_used;
+      min := store.DenseUsed;
       min_storage := store;
     end;
   end;
@@ -687,7 +689,7 @@ var
   Count: Integer;
 begin
   Result := false;
-  if not World.CountComponents.TryGetValue(Entity.id, Count) then
+  if not World.CountComponents.TryGetValue(Entity.Id, Count) then
     exit;
   if Count < included.Count then
     exit;
@@ -695,14 +697,14 @@ begin
   begin
     if not World.storages.TryGetValue(typ, store) then
       exit;
-    if not store.Has(Entity.id) then
+    if not store.Has(Entity.Id) then
       exit;
   end;
   for typ in excluded do
   begin
     if not World.storages.TryGetValue(typ, store) then
       continue;
-    if store.Has(Entity.id) then
+    if store.Has(Entity.Id) then
       exit;
   end;
   Result := True;
