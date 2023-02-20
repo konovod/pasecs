@@ -291,7 +291,7 @@ In a folder `bench` there is a tests suite and benchmark, you can see it for som
  - [ ] `if World.Exists<T> then...`
  - [ ] check correctness when deleting entities during iteration
  - [ ] nonoengine integration example, maybe example with VCL
- - [ ] CI with FPC
+ - [X] CI with FPC
 ### Mid-term
  - [ ] SingleFrame components
  - [ ] Singleton components
