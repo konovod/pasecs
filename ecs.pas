@@ -92,19 +92,6 @@ type
   TEmptyRecord = record
   end;
 
-  TSet<T> = class
-  private
-    Data: TDictionary<T, TEmptyRecord>;
-  public
-    constructor Create;
-    destructor Destroy; override;
-    procedure Add(x: T);
-    procedure Remove(x: T);
-    function Contains(x: T): Boolean;
-    function GetEnumerator: TEnumerator<T>;
-    function Count: Integer;
-  end;
-
   { TWorld }
 
   TECSFilter = class;
@@ -151,8 +138,8 @@ type
 
   TECSFilter = class
   protected
-    Included: TSet<TGenericECSStorage>;
-    Excluded: TSet<TGenericECSStorage>;
+    Included: array of TGenericECSStorage;
+    Excluded: array of TGenericECSStorage;
     // optional
     World: TECSWorld;
 
@@ -601,69 +588,29 @@ end;
 
 { TECSFilter }
 
-{ TSet<T> }
-
-procedure TSet<T>.Add(x: T);
-begin
-  Data.Add(x, NOTHING);
-end;
-
-function TSet<T>.Contains(x: T): Boolean;
-begin
-  Result := Data.ContainsKey(x);
-end;
-
-function TSet<T>.Count: Integer;
-begin
-  Result := Data.Count
-end;
-
-constructor TSet<T>.Create;
-begin
-  Data := TDictionary<T, TEmptyRecord>.Create;
-end;
-
-destructor TSet<T>.Destroy;
-begin
-  Data.Free;
-  inherited;
-end;
-
-function TSet<T>.GetEnumerator: TEnumerator<T>;
-begin
-  Result := Data.Keys.GetEnumerator;
-end;
-
-procedure TSet<T>.Remove(x: T);
-begin
-  Data.Remove(x)
-end;
-
 { TECSFilter }
 
 constructor TECSFilter.Create(aWorld: TECSWorld);
 begin
   World := aWorld;
-  Included := TSet<TGenericECSStorage>.Create;
-  Excluded := TSet<TGenericECSStorage>.Create;
 end;
 
 destructor TECSFilter.Destroy;
 begin
-  Included.Free;
-  Excluded.Free;
   inherited;
 end;
 
 function TECSFilter.Exclude<T>: TECSFilter;
 var
-  store: TGenericECSStorage;
+  check, store: TGenericECSStorage;
 begin
   store := World.GetStorage<T>;
-  if Included.Contains(store) then
-    raise Exception.Create('Same type' + (TECSStorage<T>.ComponentName) +
-      ' cannot be included and excluded to filter');
-  Excluded.Add(store);
+  for check in Included do
+    if check = store then
+      raise Exception.Create('Same type' + (TECSStorage<T>.ComponentName) +
+        ' cannot be included and excluded to filter');
+  SetLength(Excluded, length(Excluded) + 1);
+  Excluded[length(Excluded) - 1] := store;
   Result := Self;
 end;
 
@@ -689,13 +636,15 @@ end;
 
 function TECSFilter.Include<T>: TECSFilter;
 var
-  store: TGenericECSStorage;
+  check, store: TGenericECSStorage;
 begin
   store := World.GetStorage<T>;
-  if Excluded.Contains(store) then
-    raise Exception.Create('Same type' + (TECSStorage<T>.ComponentName) +
-      ' cannot be included and excluded to filter');
-  Included.Add(store);
+  for check in Excluded do
+    if check = store then
+      raise Exception.Create('Same type' + (TECSStorage<T>.ComponentName) +
+        ' cannot be included and excluded to filter');
+  SetLength(Included, length(Included) + 1);
+  Included[length(Included) - 1] := store;
   Result := Self;
 end;
 
@@ -733,12 +682,11 @@ begin
       exit;
   end;
 
-  if Excluded.Count > 0 then
-    for store in Excluded do
-    begin
-      if store.Has(Entity.Id) then
-        exit;
-    end;
+  for store in Excluded do
+  begin
+    if store.Has(Entity.Id) then
+      exit;
+  end;
   Result := True;
 end;
 

@@ -232,41 +232,6 @@ begin
   w.Free;
 end;
 
-procedure TestSet;
-var
-  aset: TSet<integer>;
-  sum, i: integer;
-begin
-  aset := TSet<integer>.Create;
-  MyAssert(aset.Contains(123) = false);
-  MyAssert(aset.Contains(124) = false);
-  aset.Add(123);
-  MyAssert(aset.Contains(123) = true);
-  MyAssert(aset.Contains(124) = false);
-  aset.Add(124);
-
-  sum := 0;
-  for i in aset do
-    inc(sum, i);
-  MyAssert(sum = 123 + 124);
-
-  MyAssert(aset.Contains(123) = true);
-  MyAssert(aset.Contains(124) = true);
-  aset.remove(123);
-  MyAssert(aset.Contains(123) = false);
-  MyAssert(aset.Contains(124) = true);
-  aset.remove(124);
-  MyAssert(aset.Contains(123) = false);
-  MyAssert(aset.Contains(124) = false);
-
-  sum := 0;
-  for i in aset do
-    inc(sum, i);
-  MyAssert(sum = 0);
-
-  aset.Free;
-end;
-
 {$IFDEF FPC}
 function SumItems(f: TECSFilter): integer;
 var
@@ -382,9 +347,9 @@ begin
   TestWorldIteration;
   TestWorldIterationWithDeletion;
   TestWorldIterationWithAdditionDeletion;
-  TestSet;
   TestFilters;
   TestSystems;
+  TestQuery;
   writeln;
   writeln('Tests passed');
 end;
