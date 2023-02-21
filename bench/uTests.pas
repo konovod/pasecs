@@ -96,6 +96,34 @@ begin
   w.Free;
 end;
 
+procedure TestQuery;
+var
+  w: TECSWorld;
+  ent, e_iter: TECSEntity;
+  c1: TComp1;
+  n: integer;
+begin
+  w := TECSWorld.Create;
+  w.NewEntity;
+
+  n := 0;
+  for e_iter in w.Query<TComp1> do
+    n := n+1;
+  MyAssert(n = 0);
+
+  w.NewEntity.Add<TComp1>(TComp1.Create(1, 1));
+
+  n := 0;
+  for e_iter in w.Query<TComp1> do
+    n := n+1;
+  MyAssert(n = 1);
+
+
+  w.Free;
+end;
+
+
+
 procedure TestAddAndDelete;
 var
   w: TECSWorld;

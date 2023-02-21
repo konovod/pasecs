@@ -130,6 +130,15 @@ type
       constructor Create(aWorld: TECSWorld);
     end;
 
+    TStorageWrapper = class
+    private
+      Storage: TGenericECSStorage;
+    protected
+      constructor Create(aStorage: TGenericECSStorage);
+    public
+      function GetEnumerator: TGenericECSStorage.TStorageEntityEnumerator;
+    end;
+
   public
     function Filter: TECSFilter;
     function NewEntity: TECSEntity;
@@ -137,6 +146,7 @@ type
     destructor Destroy; override;
     procedure Clear;
     function GetEnumerator: TWorldEntityEnumerator;
+    function Query<T>: TStorageWrapper;
   end;
 
   TECSFilter = class
@@ -222,7 +232,7 @@ constructor TECSStorage<T>.Create(aWorld: TECSWorld);
 begin
   World := aWorld;
   SetLength(Dense, 1);
-  SetLength(payload, 1);
+  SetLength(Payload, 1);
   Sparse := TDictionary<TEntityID, Integer>.Create;
   CacheIndex := -1;
   CacheID := NO_ENTITY;
@@ -250,7 +260,7 @@ end;
 
 function TECSStorage<T>.Get(Id: TEntityID): T;
 begin
-  Result := payload[FindIndex(Id)]
+  Result := Payload[FindIndex(Id)]
 end;
 {$ENDIF}
 
@@ -282,12 +292,12 @@ var
 begin
   Result := TryFindIndex(Id, i);
   if Result then
-    comp := payload[i];
+    comp := Payload[i];
 end;
 
 function TECSStorage<T>.GetPtr(Id: TEntityID): Pointer;
 begin
-  Result := @(payload[FindIndex(Id)])
+  Result := @(Payload[FindIndex(Id)])
 end;
 
 function TGenericECSStorage.Has(Id: TEntityID): Boolean;
@@ -318,10 +328,10 @@ begin
   if DenseUsed >= length(Dense) then
   begin
     SetLength(Dense, length(Dense) * 2);
-    SetLength(payload, length(payload) * 2);
+    SetLength(Payload, length(Payload) * 2);
   end;
   inc(DenseUsed);
-  payload[DenseUsed - 1] := item;
+  Payload[DenseUsed - 1] := item;
   Dense[DenseUsed - 1] := Id;
   Sparse.Add(Id, DenseUsed - 1);
   CacheIndex := DenseUsed - 1;
@@ -334,7 +344,7 @@ end;
 
 procedure TECSStorage<T>.Update(Id: TEntityID; item: T);
 begin
-  payload[FindIndex(Id)] := item;
+  Payload[FindIndex(Id)] := item;
 end;
 
 procedure TECSStorage<T>.AddOrUpdate(Id: TEntityID; item: T);
@@ -342,7 +352,7 @@ var
   i: Integer;
 begin
   if TryFindIndex(Id, i) then
-    payload[i] := item
+    Payload[i] := item
   else
     AddDontCheck(Id, item)
 end;
@@ -355,7 +365,7 @@ begin
   i := FindIndex(Id);
   if i <> DenseUsed - 1 then
   begin
-    payload[i] := payload[DenseUsed - 1];
+    Payload[i] := Payload[DenseUsed - 1];
     Dense[i] := Dense[DenseUsed - 1];
     Sparse[Dense[i]] := i;
   end;
@@ -425,7 +435,7 @@ procedure TECSEntity.RemoveAll;
 var
   store: TGenericECSStorage;
 begin
-  for store in World.storages.Values do
+  for store in World.Storages.Values do
     store.vRemoveIfExists(Id);
   World.CountComponents.Remove(Id)
 end;
@@ -439,7 +449,7 @@ begin
   else
   begin
     Result := Format('Entity(%d): [', [Id]);
-    for store in World.storages.Values do
+    for store in World.Storages.Values do
       if store.Has(Id) then
         Result := Result + store.ComponentName + ',';
     if Result[length(Result)] = ',' then
@@ -460,10 +470,10 @@ function TECSWorld.GetStorage<T>: TECSStorage<T>;
 var
   store: TGenericECSStorage;
 begin
-  if not storages.TryGetValue(TECSStorage<T>, store) then
+  if not Storages.TryGetValue(TECSStorage<T>, store) then
   begin
     store := TECSStorage<T>.Create(Self);
-    storages.Add(TECSStorage<T>, store);
+    Storages.Add(TECSStorage<T>, store);
   end;
   Result := TECSStorage<T>(store);
 end;
@@ -478,11 +488,16 @@ begin
   CountComponents.Add(Result.Id, 0);
 end;
 
+function TECSWorld.Query<T>: TStorageWrapper;
+begin
+  Result := TStorageWrapper.Create(GetStorage<T>);
+end;
+
 procedure TECSWorld.Clear;
 var
   store: TGenericECSStorage;
 begin
-  for store in storages.Values do
+  for store in Storages.Values do
     store.Clear;
   CountComponents.Clear;
 end;
@@ -491,7 +506,7 @@ function TECSWorld.Count<T>: Integer;
 var
   store: TGenericECSStorage;
 begin
-  if not storages.TryGetValue(TECSStorage<T>, store) then
+  if not Storages.TryGetValue(TECSStorage<T>, store) then
     Result := 0
   else
     Result := store.DenseUsed;
@@ -500,7 +515,7 @@ end;
 
 constructor TECSWorld.Create;
 begin
-  storages := TDictionary<TStorageClass, TGenericECSStorage>.Create();
+  Storages := TDictionary<TStorageClass, TGenericECSStorage>.Create();
   CountComponents := TDictionary<TEntityID, Integer>.Create;
 end;
 
@@ -508,9 +523,9 @@ destructor TECSWorld.Destroy;
 var
   store: TGenericECSStorage;
 begin
-  for store in storages.Values do
+  for store in Storages.Values do
     store.Free;
-  storages.Free;
+  Storages.Free;
   CountComponents.Free;
   inherited Destroy;
 end;
@@ -561,24 +576,24 @@ end;
 constructor TECSWorld.TWorldEntityEnumerator.Create(aWorld: TECSWorld);
 begin
   World := aWorld;
-  inner := aWorld.CountComponents.Keys.GetEnumerator;
+  Inner := aWorld.CountComponents.Keys.GetEnumerator;
 end;
 
 destructor TECSWorld.TWorldEntityEnumerator.Destroy;
 begin
-  inner.Free;
+  Inner.Free;
   inherited;
 end;
 
 function TECSWorld.TWorldEntityEnumerator.GetCurrent: TECSEntity;
 begin
   Result.World := World;
-  Result.Id := inner.Current;
+  Result.Id := Inner.Current;
 end;
 
 function TECSWorld.TWorldEntityEnumerator.MoveNext: Boolean;
 begin
-  Result := inner.MoveNext;
+  Result := Inner.MoveNext;
 end;
 
 { TECSFilter }
@@ -587,38 +602,38 @@ end;
 
 procedure TSet<T>.Add(x: T);
 begin
-  data.Add(x, NOTHING);
+  Data.Add(x, NOTHING);
 end;
 
 function TSet<T>.Contains(x: T): Boolean;
 begin
-  Result := data.ContainsKey(x);
+  Result := Data.ContainsKey(x);
 end;
 
 function TSet<T>.Count: Integer;
 begin
-  Result := data.Count
+  Result := Data.Count
 end;
 
 constructor TSet<T>.Create;
 begin
-  data := TDictionary<T, TEmptyRecord>.Create;
+  Data := TDictionary<T, TEmptyRecord>.Create;
 end;
 
 destructor TSet<T>.Destroy;
 begin
-  data.Free;
+  Data.Free;
   inherited;
 end;
 
 function TSet<T>.GetEnumerator: TEnumerator<T>;
 begin
-  Result := data.Keys.GetEnumerator;
+  Result := Data.Keys.GetEnumerator;
 end;
 
 procedure TSet<T>.Remove(x: T);
 begin
-  data.Remove(x)
+  Data.Remove(x)
 end;
 
 { TECSFilter }
@@ -626,23 +641,23 @@ end;
 constructor TECSFilter.Create(aWorld: TECSWorld);
 begin
   World := aWorld;
-  included := TSet<TStorageClass>.Create;
-  excluded := TSet<TStorageClass>.Create;
+  Included := TSet<TStorageClass>.Create;
+  Excluded := TSet<TStorageClass>.Create;
 end;
 
 destructor TECSFilter.Destroy;
 begin
-  included.Free;
-  excluded.Free;
+  Included.Free;
+  Excluded.Free;
   inherited;
 end;
 
 function TECSFilter.Exclude<T>: TECSFilter;
 begin
-  if included.Contains(TECSStorage<T>) then
+  if Included.Contains(TECSStorage<T>) then
     raise Exception.Create('Same type' + (TECSStorage<T>.ComponentName) +
       ' cannot be included and excluded to filter');
-  excluded.Add(TECSStorage<T>);
+  Excluded.Add(TECSStorage<T>);
   Result := Self;
 end;
 
@@ -654,9 +669,9 @@ var
 begin
   min_storage := nil;
   min := MaxInt;
-  for typ in included do
+  for typ in Included do
   begin
-    if not World.storages.TryGetValue(typ, store) then
+    if not World.Storages.TryGetValue(typ, store) then
     begin
       // TODO - always empty enumerator
       raise Exception.Create('Component ' + typ.ComponentName +
@@ -675,10 +690,10 @@ end;
 
 function TECSFilter.Include<T>: TECSFilter;
 begin
-  if excluded.Contains(TECSStorage<T>) then
+  if Excluded.Contains(TECSStorage<T>) then
     raise Exception.Create('Same type' + (TECSStorage<T>.ComponentName) +
       ' cannot be included and excluded to filter');
-  included.Add(TECSStorage<T>);
+  Included.Add(TECSStorage<T>);
   Result := Self;
 end;
 
@@ -688,21 +703,21 @@ var
   typ: TStorageClass;
   Count: Integer;
 begin
-  Result := false;
+  Result := False;
   if not World.CountComponents.TryGetValue(Entity.Id, Count) then
     exit;
-  if Count < included.Count then
+  if Count < Included.Count then
     exit;
-  for typ in included do
+  for typ in Included do
   begin
-    if not World.storages.TryGetValue(typ, store) then
+    if not World.Storages.TryGetValue(typ, store) then
       exit;
     if not store.Has(Entity.Id) then
       exit;
   end;
-  for typ in excluded do
+  for typ in Excluded do
   begin
-    if not World.storages.TryGetValue(typ, store) then
+    if not World.Storages.TryGetValue(typ, store) then
       continue;
     if store.Has(Entity.Id) then
       exit;
@@ -846,6 +861,19 @@ begin
   for flt in Filters do
     flt.Free;
   State := TearedDown;
+end;
+
+{ TECSWorld.TStorageWrapper }
+
+constructor TECSWorld.TStorageWrapper.Create(aStorage: TGenericECSStorage);
+begin
+  Storage := aStorage
+end;
+
+function TECSWorld.TStorageWrapper.GetEnumerator
+  : TGenericECSStorage.TStorageEntityEnumerator;
+begin
+  Result := Storage.GetEnumerator
 end;
 
 end.
