@@ -100,7 +100,6 @@ procedure TestQuery;
 var
   w: TECSWorld;
   ent, e_iter: TECSEntity;
-  c1: TComp1;
   n: integer;
 begin
   w := TECSWorld.Create;
@@ -111,13 +110,21 @@ begin
     n := n+1;
   MyAssert(n = 0);
 
-  w.NewEntity.Add<TComp1>(TComp1.Create(1, 1));
+  ent := w.NewEntity;
+  ent.Add<TComp1>(TComp1.Create(1, 1));
 
   n := 0;
   for e_iter in w.Query<TComp1> do
     n := n+1;
   MyAssert(n = 1);
 
+  ent.Add<TComp2>(TComp2.Create('123'));
+  ent.Remove<TComp1>;
+
+  n := 0;
+  for e_iter in w.Query<TComp1> do
+    n := n+1;
+  MyAssert(n = 0);
 
   w.Free;
 end;
