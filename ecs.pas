@@ -37,7 +37,7 @@ type
 
   TGenericECSStorage = class
   protected type
-    TStorageEntityEnumerator = class
+    TStorageEntityEnumerator = record
       Parent: TGenericECSStorage;
       Index: Integer;
     private
@@ -72,7 +72,6 @@ type
     constructor Create(aWorld: TECSWorld);
     procedure vRemoveIfExists(Id: TEntityID); override;
     procedure AddDontCheck(Id: TEntityID; item: T);
-    // public
 {$IFNDEF FPC}
     function Get(Id: TEntityID): T;
 {$ENDIF}
@@ -86,15 +85,11 @@ type
     destructor Destroy; override;
   end;
 
-  // TECSFilter = class;
   TStorageClass = class of TGenericECSStorage;
 
-  TEmptyRecord = record
-  end;
+  TECSFilter = class;
 
   { TWorld }
-
-  TECSFilter = class;
 
   TECSWorld = class
   protected
@@ -117,41 +112,37 @@ type
       constructor Create(aWorld: TECSWorld);
     end;
 
-    TStorageWrapper = class
-    private
+  public type
+    TStorageWrapper = record
       Storage: TGenericECSStorage;
-    protected
       constructor Create(aStorage: TGenericECSStorage);
-    public
       function GetEnumerator: TGenericECSStorage.TStorageEntityEnumerator;
     end;
 
-  public
-    function Filter: TECSFilter;
-    function NewEntity: TECSEntity;
-    constructor Create;
-    destructor Destroy; override;
-    procedure Clear;
-    function GetEnumerator: TWorldEntityEnumerator;
-    function Query<T>: TStorageWrapper;
+  function Filter: TECSFilter;
+  function NewEntity: TECSEntity;
+  constructor Create;
+  destructor Destroy; override;
+  procedure Clear;
+  function GetEnumerator: TWorldEntityEnumerator;
+  function Query<T>: TStorageWrapper;
   end;
 
   TECSFilter = class
   protected
     Included: array of TGenericECSStorage;
     Excluded: array of TGenericECSStorage;
-    // optional
+    // TODO - Optional: array of array of TGenericECSStorage;
     World: TECSWorld;
 
   type
-    TFilterEntityEnumerator = class
+    TFilterEntityEnumerator = record
       Filter: TECSFilter;
       Inner: TGenericECSStorage.TStorageEntityEnumerator;
     private
       function GetCurrent: TECSEntity;
     public
       function MoveNext: Boolean;
-      destructor Destroy; override;
       property Current: TECSEntity read GetCurrent;
       constructor Create(aFilter: TECSFilter;
         aInner: TGenericECSStorage.TStorageEntityEnumerator);
@@ -162,8 +153,8 @@ type
   public
     function Include<T>: TECSFilter;
     function Exclude<T>: TECSFilter;
-    // /// /    procedure Either<T1, T2>;overload;
-    // /// /    procedure Either<T1, T2, T3>;overload;
+    // TODO - procedure Either<T1, T2>;overload;
+    // TODO - procedure Either<T1, T2, T3>;overload;
     function GetEnumerator: TFilterEntityEnumerator;
     function Satisfied(Entity: TECSEntity): Boolean;
     constructor Create(aWorld: TECSWorld);
@@ -202,9 +193,6 @@ type
     function Add(sys: TECSSystemClass): TECSSystems; overload;
     destructor Destroy; override;
   end;
-
-const
-  NOTHING: TEmptyRecord = ();
 
 implementation
 
@@ -252,6 +240,7 @@ function TECSStorage<T>.Get(Id: TEntityID): T;
 begin
   Result := Payload[FindIndex(Id)]
 end;
+
 {$ENDIF}
 
 function TGenericECSStorage.GetEnumerator: TStorageEntityEnumerator;
@@ -350,7 +339,6 @@ end;
 procedure TECSStorage<T>.Remove(Id: TEntityID);
 var
   Count, i: Integer;
-
 begin
   i := FindIndex(Id);
   if i <> DenseUsed - 1 then
@@ -389,6 +377,7 @@ function TECSEntity.Get<T>: T;
 begin
   Result := World.GetStorage<T>.Get(Id);
 end;
+
 {$ENDIF}
 
 function TECSEntity.TryGet<T>(out comp: T): Boolean;
@@ -500,7 +489,6 @@ begin
     Result := 0
   else
     Result := store.DenseUsed;
-
 end;
 
 constructor TECSWorld.Create;
@@ -697,12 +685,6 @@ constructor TECSFilter.TFilterEntityEnumerator.Create(aFilter: TECSFilter;
 begin
   Filter := aFilter;
   Inner := aInner;
-end;
-
-destructor TECSFilter.TFilterEntityEnumerator.Destroy;
-begin
-  Inner.Free;
-  inherited;
 end;
 
 function TECSFilter.TFilterEntityEnumerator.GetCurrent: TECSEntity;
