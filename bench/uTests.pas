@@ -107,6 +107,8 @@ begin
   for e_iter in w.Query<TComp1> do
     n := n + 1;
   MyAssert(n = 0);
+  MyAssert(w.Count<TComp1> = 0);
+  MyAssert(w.Exists<TComp1> = False);
 
   ent := w.NewEntity;
   ent.Add<TComp1>(TComp1.Create(1, 1));
@@ -115,6 +117,8 @@ begin
   for e_iter in w.Query<TComp1> do
     n := n + 1;
   MyAssert(n = 1);
+  MyAssert(w.Count<TComp1> = 1);
+  MyAssert(w.Exists<TComp1> = True);
 
   ent.Add<TComp2>(TComp2.Create('123'));
   ent.remove<TComp1>;
@@ -123,6 +127,8 @@ begin
   for e_iter in w.Query<TComp1> do
     n := n + 1;
   MyAssert(n = 0);
+  MyAssert(w.Count<TComp1> = 0);
+  MyAssert(w.Exists<TComp1> = False);
 
   w.Free;
 end;

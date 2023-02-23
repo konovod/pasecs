@@ -97,7 +97,6 @@ type
     Storages: TDictionary<TStorageClass, TGenericECSStorage>;
     CountComponents: TDictionary<TEntityID, Integer>;
     function GetStorage<T>: TECSStorage<T>;
-    function Count<T>: Integer;
 
   type
     TWorldEntityEnumerator = class
@@ -126,6 +125,8 @@ type
   procedure Clear;
   function GetEnumerator: TWorldEntityEnumerator;
   function Query<T>: TStorageWrapper;
+  function Count<T>: Integer;
+  function Exists<T>: Boolean;
   end;
 
   TECSFilter = class
@@ -506,6 +507,11 @@ begin
   Storages.Free;
   CountComponents.Free;
   inherited Destroy;
+end;
+
+function TECSWorld.Exists<T>: Boolean;
+begin
+  Result := Count<T> > 0
 end;
 
 function TECSWorld.Filter: TECSFilter;

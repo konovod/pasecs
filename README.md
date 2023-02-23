@@ -9,14 +9,10 @@
   * [Entity](#entity)
   * [Component](#component)
   * [System](#system)
-* [Special components](#special-components)
-  * [ECS::SingleFrame](#ecssingleframe)
-  * [ECS::Multiple](#ecsmultiple)
-  * [ECS::Singleton](#ecssingleton)
 * [Other classes](#other-classes)
-  * [ECS::World](#ecsworld)
-  * [ECS::Filter](#ecsfilter)
-  * [ECS::Systems](#ecssystems)
+  * [TECSWorld](#ecsworld)
+  * [TECSFilter](#ecsfilter)
+  * [TECSSystems](#ecssystems)
 * [Engine integration](#engine-integration)
 * [Other features](#other-features)
   * [Statistics](#statistics)
@@ -202,8 +198,8 @@ end;
 
 ### Other classes
 
-#### ECS::World
-Root level container for all entities / components, is iterated with ECS::Systems:
+#### TECSWorld
+Root level container for all entities / components, is iterated with TECSSystems:
 ```pascal
 World := TECSWorld.Create;
 
@@ -221,7 +217,7 @@ for Entity in World do
 Filter := World.Filter.Include(comp1).Exclude(comp2).Include(comp3);
 ```
 
-#### ECS::Filter
+#### TECSFilter
 Allows to iterate over entities with specified conditions.
 Created by call `World.Filter` or inside a `TECSSystem.Filter`.
 
@@ -233,7 +229,7 @@ All of them can be called 0, 1, or many times using method chaining. Currently, 
 
 You can iterate filter using usual `for entity in filter do ...`
 
-#### ECS::Systems
+#### TECSSystems
 Group of systems to process `TECSWorld` instance:
 ```pascal
 World := TECSWorld.Create;
@@ -281,6 +277,68 @@ end;
 
 In a folder `bench` there is a tests suite and benchmark, you can see it for some examples. Proper example is planned.
 
+## Other features
+### Statistics
+ //TODO
+
+### Iterating without filter
+Sometimes you just need to check if some component is present in a world. No need to create a filter for it - just use 
+
+`if world.Exists<SomeComponent> then ...`
+
+ You can also count number of components using 
+
+`world.Count<SomeComponent>`
+
+You can also iterate over single component without creating `TECSFilter` using `world.Query<T>`.
+It returns a lightweight enumerable, that can be iterated using 
+
+`for entity in world.Query<TMyComponent> do ...` 
+
+Note that it returns entities, not components. To obtain actual components you can do 
+
+```pascal
+for entity in world.Query<TMyComponent> do 
+begin
+  comp1 := entity.Get<TMyComponent>;
+  ...
+end;
+```
+
+This could be useful when iterating inside `System#process`:
+```pascal
+  function TFindNearestTarget.Filter(World: TECSWorld);
+  begin
+    Result := World.Include<Pos>.Include<FindTarget>;
+  end
+
+  procedure TFindNearestTarget.Process(Entity: TECSEntity);
+  var
+    Target, Nearest: TECSEntity;
+    OurPos, Range, NearestRange: Double;
+  begin
+    OurPos := entity.Get<Pos>;
+    Nearest := nil;
+    NearestRange := Inf;
+    // world.Filter.Include<IsATarget> will allocate a Filter
+    // so you should create it at constructor and store it somewhere
+    // so here is an easier way:
+    for Target in world.query<IsATarget> do
+    begin
+      Range := distance(Target.get<Pos>, pos);
+      if Range < NearestRange then
+      begin
+        Nearest := Target;
+        NearestRange := Range;
+      end
+    end;
+    // ...
+  end;
+```
+
+### Callbacks
+ //TODO
+ 
 ## Benchmarks
 //TODO
 
