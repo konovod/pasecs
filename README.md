@@ -345,9 +345,10 @@ This could be useful when iterating inside `System#process`:
  - [ ] runtime statistics
  - [x] `for entity in World.Query<T>...`
  - [x] `if World.Exists<T> then...`
- - [ ] check correctness when deleting entities during iteration
+ - [x] check correctness when deleting entities during iteration
  - [ ] nonoengine integration example, maybe example with VCL
- - [X] CI with FPC
+ - [x] CI with FPC
+ - [ ] generations in EntityID
 ### Mid-term
  - [ ] SingleFrame components
  - [ ] Singleton components

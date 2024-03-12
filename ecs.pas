@@ -584,7 +584,8 @@ end;
 
 function TGenericECSStorage.TStorageEntityEnumerator.MoveNext: Boolean;
 begin
-  inc(Index);
+  if (index < 0) or (Parent.CacheID = Parent.Dense[index]) then
+    inc(Index);
   Result := index < Parent.DenseUsed;
 end;
 

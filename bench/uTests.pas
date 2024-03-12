@@ -302,12 +302,8 @@ begin
   for ent in f do
   begin
     inc(i);
-    writeln(i);
     if odd(i) then
-    begin
-      writeln('removed');
       ent.RemoveAll;
-    end;
     inc(sum);
   end;
   MyAssert(sum = 10);
@@ -369,7 +365,7 @@ begin
   TestWorldIterationWithDeletion;
   TestWorldIterationWithAdditionDeletion;
   TestFilters;
-//  TestFiltersWithDeletion;
+  TestFiltersWithDeletion;
   TestSystems;
   TestQuery;
   writeln;
