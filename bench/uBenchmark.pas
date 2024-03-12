@@ -150,7 +150,9 @@ type
   end;
 
   TEmptyFilterSystem = class(TECSSystem)
+    count: integer;
     function Filter: TECSFilter; override;
+    procedure Process(e: TECSEntity); override;
   end;
 
   TAddDeleteSingleComponent = class(TECSSystem)
@@ -179,7 +181,6 @@ type
 
   TCountComp1 = class(TECSSystem)
     count: integer;
-  public
     function Filter: TECSFilter; override;
     procedure Process(e: TECSEntity); override;
   end;
@@ -213,15 +214,9 @@ type
   public
     function Filter: TECSFilter; override;
     procedure Process(e: TECSEntity); override;
-  end;
+        procedure Execute; override;
 
-procedure BenchEmptyFilter;
-var
-  w: TECSWorld;
-begin
-  w := InitBenchmarkWorld;
-  w.Free;
-end;
+  end;
 
 procedure BenchExec;
 begin
@@ -350,6 +345,11 @@ end;
 function TEmptyFilterSystem.Filter: TECSFilter;
 begin
   Result := world.Filter.Include<TComp5>;
+end;
+
+procedure TEmptyFilterSystem.Process(e: TECSEntity);
+begin
+  Inc(Count)
 end;
 
 { TAddDeleteSingleComponent }
@@ -482,8 +482,8 @@ begin
 {$ELSE}
   c := e.Get<TComp1>;
 {$ENDIF}
-  e.Remove<TComp1>;
   e.Add<TComp5>(TComp5.Create(-c.x, -c.y));
+  e.Remove<TComp1>;
 end;
 
 { TReplaceComp5 }
@@ -502,8 +502,8 @@ begin
 {$ELSE}
   c := e.Get<TComp5>;
 {$ENDIF}
-  e.Remove<TComp5>;
   e.Add<TComp1>(TComp1.Create(-c.vx, -c.vy));
+  e.Remove<TComp5>;
 end;
 
 { TReplaceComps }
@@ -516,6 +516,12 @@ begin
 end;
 
 { TComplexFilter }
+
+procedure TComplexFilter.Execute;
+begin
+//  writeln(count);
+  count := 0;
+end;
 
 function TComplexFilter.Filter: TECSFilter;
 begin

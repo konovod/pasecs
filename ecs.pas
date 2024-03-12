@@ -3,6 +3,7 @@ unit ecs;
 {$IFDEF FPC}
 {$mode Delphi}{$H+}
 {$ENDIF}
+{$Q-}
 
 interface
 
@@ -52,7 +53,7 @@ type
     DenseUsed: Integer;
     World: TECSWorld;
     Dense: array of TEntityID;
-    Sparse: TDictionary<TEntityID, Integer>;
+    Sparse: array of Integer;
     CacheIndex: Integer;
     CacheID: TEntityID;
     procedure vRemoveIfExists(Id: TEntityID); virtual; abstract;
@@ -81,8 +82,6 @@ type
     procedure AddOrUpdate(Id: TEntityID; item: T);
     procedure Add(Id: TEntityID; item: T);
     procedure Remove(Id: TEntityID);
-  public
-    destructor Destroy; override;
   end;
 
   TStorageClass = class of TGenericECSStorage;
@@ -95,18 +94,20 @@ type
   protected
     CurId: TEntityID;
     Storages: TDictionary<TStorageClass, TGenericECSStorage>;
-    CountComponents: TDictionary<TEntityID, Integer>;
+    CountComponents: array of Integer;
+    FreeItems: array of TEntityID;
+    NFreeItems: Integer;
+    SparseSize: Integer;
     function GetStorage<T>: TECSStorage<T>;
-
+    procedure AddFreeItem(it: TEntityID);
   type
     TWorldEntityEnumerator = class
       World: TECSWorld;
-      Inner: TEnumerator<TEntityID>;
+      NextItem: TEntityID;
     private
       function GetCurrent: TECSEntity;
     public
       function MoveNext: Boolean;
-      destructor Destroy; override;
       property Current: TECSEntity read GetCurrent;
       constructor Create(aWorld: TECSWorld);
     end;
@@ -159,7 +160,6 @@ type
     function GetEnumerator: TFilterEntityEnumerator;
     function Satisfied(Entity: TECSEntity): Boolean;
     constructor Create(aWorld: TECSWorld);
-    destructor Destroy; override;
   end;
 
   TECSSystem = class
@@ -197,12 +197,14 @@ type
 
 implementation
 
-{ TECSStorage }
+const
+  DEFAULT_ENTITY_POOL_SIZE = 1024;
+
+  { TECSStorage }
 
 procedure TGenericECSStorage.Clear;
 begin
   DenseUsed := 0;
-  Sparse.Clear;
   CacheIndex := -1;
   CacheID := NO_ENTITY;
 end;
@@ -212,24 +214,26 @@ begin
   World := aWorld;
   SetLength(Dense, 1);
   SetLength(Payload, 1);
-  Sparse := TDictionary<TEntityID, Integer>.Create;
+  SetLength(Sparse, World.SparseSize);
   CacheIndex := -1;
   CacheID := NO_ENTITY;
 end;
 
-destructor TECSStorage<T>.Destroy;
-begin
-  Sparse.Free;
-  inherited Destroy;
-end;
-
 function TGenericECSStorage.FindIndex(Id: TEntityID): Integer;
+var
+  Wrong: TECSEntity;
 begin
   if Id = CacheID then
     Result := CacheIndex
   else
   begin
     Result := Sparse[Id];
+    if (Result >= DenseUsed) or (Dense[Result] <> Id) then
+    begin
+      Wrong.World := World;
+      Wrong.Id := Id;
+      raise Exception.Create('Component '+ComponentName+' not found in '+Wrong.ToString);
+    end;
     CacheIndex := Result;
     CacheID := Id;
   end;
@@ -258,7 +262,8 @@ begin
     i := CacheIndex;
     exit;
   end;
-  Result := Sparse.TryGetValue(Id, i);
+  i := Sparse[Id];
+  Result := (i < DenseUsed) and (Dense[i] = Id);
   if Result then
   begin
     CacheIndex := i;
@@ -313,13 +318,10 @@ begin
   inc(DenseUsed);
   Payload[DenseUsed - 1] := item;
   Dense[DenseUsed - 1] := Id;
-  Sparse.Add(Id, DenseUsed - 1);
+  Sparse[Id] := DenseUsed - 1;
   CacheIndex := DenseUsed - 1;
   CacheID := Id;
-  if World.CountComponents.ContainsKey(Id) then
-    World.CountComponents[Id] := World.CountComponents[Id] + 1
-  else
-    World.CountComponents.Add(Id, 1);
+  World.CountComponents[Id] := World.CountComponents[Id] + 1
 end;
 
 procedure TECSStorage<T>.Update(Id: TEntityID; item: T);
@@ -339,7 +341,7 @@ end;
 
 procedure TECSStorage<T>.Remove(Id: TEntityID);
 var
-  Count, i: Integer;
+  i: Integer;
 begin
   i := FindIndex(Id);
   if i <> DenseUsed - 1 then
@@ -349,14 +351,11 @@ begin
     Sparse[Dense[i]] := i;
   end;
   dec(DenseUsed);
-  Sparse.Remove(Id);
   CacheIndex := -1;
   CacheID := NO_ENTITY;
-  Count := World.CountComponents[Id];
-  if Count = 1 then
-    World.CountComponents.Remove(Id)
-  else
-    World.CountComponents[Id] := Count - 1;
+  World.CountComponents[Id] := World.CountComponents[Id] - 1;
+  if World.CountComponents[Id] = 0 then
+    World.AddFreeItem(id);
 end;
 
 procedure TECSStorage<T>.vRemoveIfExists(Id: TEntityID);
@@ -417,7 +416,6 @@ var
 begin
   for store in World.Storages.Values do
     store.vRemoveIfExists(Id);
-  World.CountComponents.Remove(Id)
 end;
 
 function TECSEntity.ToString: string;
@@ -459,18 +457,42 @@ begin
 end;
 
 function TECSWorld.NewEntity: TECSEntity;
+var
+  store: TGenericECSStorage;
 begin
   Result.World := Self;
+  if NFreeItems > 0 then
+  begin
+    Result.Id := FreeItems[NFreeItems-1];
+    Dec(NFreeItems);
+    exit;
+  end;
+
+
   Result.Id := CurId;
   inc(CurId);
-  if CurId = NO_ENTITY then
-    CurId := 0;
-  CountComponents.Add(Result.Id, 0);
+  // if CurId = NO_ENTITY then
+  // CurId := 0;
+  if CurId >= SparseSize then
+  begin
+    SparseSize := SparseSize * 2;
+    SetLength(CountComponents, SparseSize);
+    SetLength(FreeItems, SparseSize);
+    for store in Storages.Values do
+      SetLength(store.Sparse, SparseSize);
+  end;
+//  CountComponents[Result.Id] := 0;
 end;
 
 function TECSWorld.Query<T>: TStorageWrapper;
 begin
   Result := TStorageWrapper.Create(GetStorage<T>);
+end;
+
+procedure TECSWorld.AddFreeItem(it: TEntityID);
+begin
+  Inc(NFreeItems);
+  FreeItems[NFreeItems-1] := it
 end;
 
 procedure TECSWorld.Clear;
@@ -479,7 +501,10 @@ var
 begin
   for store in Storages.Values do
     store.Clear;
-  CountComponents.Clear;
+  SetLength(CountComponents, 0);
+  SetLength(CountComponents, SparseSize);
+  NFreeItems := 0;
+  CurId := 0;
 end;
 
 function TECSWorld.Count<T>: Integer;
@@ -495,7 +520,9 @@ end;
 constructor TECSWorld.Create;
 begin
   Storages := TDictionary<TStorageClass, TGenericECSStorage>.Create();
-  CountComponents := TDictionary<TEntityID, Integer>.Create;
+  SparseSize := DEFAULT_ENTITY_POOL_SIZE;
+  SetLength(CountComponents, SparseSize);
+  SetLength(FreeItems, SparseSize)
 end;
 
 destructor TECSWorld.Destroy;
@@ -505,7 +532,6 @@ begin
   for store in Storages.Values do
     store.Free;
   Storages.Free;
-  CountComponents.Free;
   inherited Destroy;
 end;
 
@@ -560,24 +586,25 @@ end;
 constructor TECSWorld.TWorldEntityEnumerator.Create(aWorld: TECSWorld);
 begin
   World := aWorld;
-  Inner := aWorld.CountComponents.Keys.GetEnumerator;
-end;
-
-destructor TECSWorld.TWorldEntityEnumerator.Destroy;
-begin
-  Inner.Free;
-  inherited;
+  NextItem := 0;
 end;
 
 function TECSWorld.TWorldEntityEnumerator.GetCurrent: TECSEntity;
 begin
   Result.World := World;
-  Result.Id := Inner.Current;
+  Result.Id := NextItem-1
 end;
 
 function TECSWorld.TWorldEntityEnumerator.MoveNext: Boolean;
 begin
-  Result := Inner.MoveNext;
+  Result := True;
+  while NextItem <= World.CurId do
+  begin
+    inc(NextItem);
+    if World.CountComponents[NextItem-1] > 0 then
+      exit;
+  end;
+  Result := False;
 end;
 
 { TECSFilter }
@@ -587,11 +614,6 @@ end;
 constructor TECSFilter.Create(aWorld: TECSWorld);
 begin
   World := aWorld;
-end;
-
-destructor TECSFilter.Destroy;
-begin
-  inherited;
 end;
 
 function TECSFilter.Exclude<T>: TECSFilter;
@@ -647,7 +669,8 @@ var
   store: TGenericECSStorage;
 begin
   Result := False;
-  // TODO - CountComponents < Included.Count once migrated to sparse-sets
+  if World.CountComponents[Entity.Id] < Length(Included) then
+    exit;
   for store in Included do
   begin
     if not store.Has(Entity.Id) then
@@ -667,7 +690,8 @@ var
   store: TGenericECSStorage;
 begin
   Result := False;
-  // TODO - CountComponents < Included.Count once migrated to sparse-sets
+  if World.CountComponents[Entity.Id] < Length(Included) then
+    exit;
   for store in Included do
   begin
     if store = ExceptStore then
