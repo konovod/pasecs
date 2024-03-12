@@ -75,11 +75,11 @@ begin
   Result := state.TotalAllocatedMediumBlockSize +
     state.TotalAllocatedLargeBlockSize;
   for small in state.SmallBlockTypeStates do
-    Inc(Result, small.AllocatedBlockCount)
+    Inc(Result, small.AllocatedBlockCount * small.UseableBlockSize)
 end;
 {$ENDIF}
 
-function Benchmark(x: TBenchProc): integer; // return nanoseconds
+function Benchmark(x: TBenchProc): integer; // return microseconds
 var
   I: integer;
 begin

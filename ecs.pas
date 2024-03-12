@@ -100,7 +100,7 @@ type
     function GetStorage<T>: TECSStorage<T>;
     procedure AddFreeItem(it: TEntityID);
   type
-    TWorldEntityEnumerator = class
+    TWorldEntityEnumerator = record
       World: TECSWorld;
       NextItem: TEntityID;
     private
