@@ -25,9 +25,8 @@
 
 This is a ECS library for Delphi/FreePascal.
 
-Currently, FPC is partially supported - due to [bug](https://gitlab.com/freepascal.org/fpc/source/-/issues/40155) `Get` method don't compile, and without it it's pretty cumbersome to use.
-
 Supported Delphi version: I've tested it on Delphi 11.2, should work on older versions with generics too. Win32 and Win64 works, Linux should work too, Android is planned.
+Supported FPC version: I've tested it on FPC 3.2.2.
 
 The library is a single file `ecs.pas`, add it to your project and then do:
 ```pascal
@@ -92,9 +91,8 @@ begin
 
   // run systems
   systems.Init;
-  10.times do
+  for i := 1 to 5 do
     systems.Execute;
-  end
   systems.Teardown;
 end.
 ```
@@ -345,8 +343,8 @@ This could be useful when iterating inside `System#process`:
 ## Plans
 ### Short-term
  - [ ] runtime statistics
- - [ ] `for entity in World.Query<T>...`
- - [ ] `if World.Exists<T> then...`
+ - [x] `for entity in World.Query<T>...`
+ - [x] `if World.Exists<T> then...`
  - [ ] check correctness when deleting entities during iteration
  - [ ] nonoengine integration example, maybe example with VCL
  - [X] CI with FPC
@@ -356,7 +354,7 @@ This could be useful when iterating inside `System#process`:
  - [ ] Callbacks on adding\deleting components
  - [ ] Multiple components
  - [ ] Android target (`[weak]` annotations etc)
- - [ ] Switch to sparsesets? archetypes?
+ - [x] Switch to sparsesets? archetypes?
 
 ## Contributors
 - [Andrey Konovod](https://github.com/konovod) - creator and maintainer

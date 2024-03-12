@@ -440,11 +440,7 @@ procedure TUpdateComp1.Process(e: TECSEntity);
 var
   c: TComp1;
 begin
-{$IFDEF FPC}
-  e.TryGet<TComp1>(c);
-{$ELSE}
   c := e.Get<TComp1>;
-{$ENDIF}
   c.x := -c.x;
   c.y := -c.y;
   e.Update<TComp1>(c);
@@ -477,11 +473,7 @@ procedure TReplaceComp1.Process(e: TECSEntity);
 var
   c: TComp1;
 begin
-{$IFDEF FPC}
-  e.TryGet<TComp1>(c);
-{$ELSE}
   c := e.Get<TComp1>;
-{$ENDIF}
   e.Add<TComp5>(TComp5.Create(-c.x, -c.y));
   e.Remove<TComp1>;
 end;
@@ -497,11 +489,7 @@ procedure TReplaceComp5.Process(e: TECSEntity);
 var
   c: TComp5;
 begin
-{$IFDEF FPC}
-  e.TryGet<TComp5>(c);
-{$ELSE}
   c := e.Get<TComp5>;
-{$ENDIF}
   e.Add<TComp1>(TComp1.Create(-c.vx, -c.vy));
   e.Remove<TComp5>;
 end;

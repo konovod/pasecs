@@ -14,5 +14,4 @@ begin
   DoTests;
   DoBenchmarks;
   readln;
-
 end.

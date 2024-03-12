@@ -22,9 +22,7 @@ type
   TECSEntity = record
     World: TECSWorld;
     Id: TEntityID;
-{$IFNDEF FPC}
     function Get<T>: T;
-{$ENDIF}
     function TryGet<T>(out comp: T): Boolean;
     function GetPtr<T>: Pointer;
     function Has<T>: Boolean;
@@ -74,6 +72,7 @@ type
     procedure vRemoveIfExists(Id: TEntityID); override;
     procedure AddDontCheck(Id: TEntityID; item: T);
 {$IFNDEF FPC}
+    // doesn't work due to [bug](https://gitlab.com/freepascal.org/fpc/source/-/issues/40155)
     function Get(Id: TEntityID): T;
 {$ENDIF}
     function TryGet(Id: TEntityID; out comp: T): Boolean;
@@ -371,7 +370,15 @@ begin
   World.GetStorage<T>.AddOrUpdate(Id, item);
 end;
 
-{$IFNDEF FPC}
+{$IFDEF FPC}
+// TStorage<T>.Get doesn't work due to [bug](https://gitlab.com/freepascal.org/fpc/source/-/issues/40155)
+// so use GetPtr here
+function TECSEntity.Get<T>: T;
+begin
+  Result := T(World.GetStorage<T>.GetPtr(Id)^);
+end;
+
+{$ELSE}
 
 function TECSEntity.Get<T>: T;
 begin
