@@ -41,6 +41,7 @@ type
     TStorageEntityEnumerator = record
       Parent: TGenericECSStorage;
       Index: Integer;
+      LastID: TEntityID;
     private
       function GetCurrent: TECSEntity;
     public
@@ -602,8 +603,9 @@ end;
 
 function TGenericECSStorage.TStorageEntityEnumerator.MoveNext: Boolean;
 begin
-  if (index < 0) or (Parent.CacheID = Parent.Dense[index]) then
+  if (index < 0) or (Parent.Dense[index] = LastID) then
     inc(Index);
+  LastID := Parent.Dense[index];
   Result := index < Parent.DenseUsed;
 end;
 

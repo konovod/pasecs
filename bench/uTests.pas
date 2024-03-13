@@ -282,6 +282,7 @@ begin
   end;
   f := w.Filter.Include<TComp1>;
   i := 0;
+  sum := 0;
   for ent in f do
   begin
     inc(i);
@@ -291,6 +292,54 @@ begin
   end;
   MyAssert(sum = 10);
   f.Free;
+  w.Free;
+end;
+
+procedure TestQueryWithDeletion;
+var
+  w: TECSWorld;
+  i, sum: integer;
+  ent: TECSEntity;
+begin
+  w := TECSWorld.Create;
+  for i := 1 to 10 do
+  begin
+    ent := w.NewEntity;
+    ent.Add<TComp1>(TComp1.Create(i, 1));
+  end;
+  i := 0;
+  sum := 0;
+  for ent in w.Query<TComp1> do
+  begin
+    inc(i);
+    if odd(i) then
+      ent.RemoveAll;
+    inc(sum);
+  end;
+  MyAssert(sum = 10);
+  w.Free;
+end;
+
+procedure TestQueryInsideQuery;
+var
+  w: TECSWorld;
+  i, sum: integer;
+  ent, ent2: TECSEntity;
+begin
+  w := TECSWorld.Create;
+  for i := 1 to 10 do
+  begin
+    ent := w.NewEntity;
+    ent.Add<TComp1>(TComp1.Create(i, 1));
+  end;
+  i := 0;
+  sum := 0;
+  for ent in w.Query<TComp1> do
+    for ent2 in w.Query<TComp1> do
+    begin
+      inc(sum, (ent.Get<TComp1>.x) + (ent2.Get<TComp1>.x));
+    end;
+  MyAssert(sum = 2*55*10);
   w.Free;
 end;
 
@@ -347,6 +396,8 @@ begin
   TestWorldIterationWithAdditionDeletion;
   TestFilters;
   TestFiltersWithDeletion;
+  TestQueryWithDeletion;
+  TestQueryInsideQuery;
   TestSystems;
   TestQuery;
   writeln;
