@@ -26,10 +26,12 @@ type
     function TryGet<T>(out comp: T): Boolean;
     function GetPtr<T>: Pointer;
     function Has<T>: Boolean;
-    procedure Add<T>(item: T);
+    procedure Add<T>(item: T); overload;
+    procedure Add<T>(); overload;
     procedure Update<T>(item: T);
-    procedure AddOrUpdate<T>(item: T);
-    procedure Remove<T>;
+    procedure AddOrUpdate<T>(item: T); overload;
+    procedure AddOrUpdate<T>(); overload;
+    procedure Remove<T>();
     procedure RemoveAll;
     function ToString: string;
   end;
@@ -370,6 +372,14 @@ begin
   World.GetStorage<T>.AddOrUpdate(Id, item);
 end;
 
+procedure TECSEntity.AddOrUpdate<T>;
+var
+  x: T;
+begin
+  assert(sizeof(T) = 0);
+  AddOrUpdate<T>(x);
+end;
+
 {$IFDEF FPC}
 // TStorage<T>.Get doesn't work due to [bug](https://gitlab.com/freepascal.org/fpc/source/-/issues/40155)
 // so use GetPtr here
@@ -405,6 +415,14 @@ end;
 procedure TECSEntity.Add<T>(item: T);
 begin
   World.GetStorage<T>.Add(Id, item);
+end;
+
+procedure TECSEntity.Add<T>;
+var
+  x: T;
+begin
+  assert(sizeof(T) = 0);
+  Add<T>(x);
 end;
 
 procedure TECSEntity.Update<T>(item: T);

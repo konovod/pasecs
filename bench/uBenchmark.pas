@@ -28,7 +28,6 @@ type
   end;
 
   TComp4 = record
-    class function CreateEmpty: TComp4; static;
   end;
 
   TComp5 = record
@@ -130,7 +129,7 @@ begin
     if I mod 5 = 0 then
       ent.Add<TComp3>(TComp3.Create(I));
     if I mod 7 = 0 then
-      ent.Add<TComp4>(TComp4.CreateEmpty);
+      ent.Add<TComp4>;
 
     ent.Add<TComp5>(TComp5.Create(0, 0));
     ent.Remove<TComp5>;
@@ -325,13 +324,6 @@ begin
     Self.heavy[I] := v + I;
 end;
 
-{ TComp4 }
-
-class function TComp4.CreateEmpty: TComp4;
-begin
-
-end;
-
 { TComp5 }
 
 constructor TComp5.Create(vx, vy: integer);
@@ -373,7 +365,7 @@ begin
   ent.Add<TComp1>(TComp1.Create(-1, -1));
   ent.Add<TComp2>(TComp2.Create('-1'));
   ent.Add<TComp3>(TComp3.Create(-1));
-  ent.Add<TComp4>(TComp4.CreateEmpty);
+  ent.Add<TComp4>;
   ent.RemoveAll;
 end;
 

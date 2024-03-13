@@ -26,7 +26,6 @@ type
   end;
 
   TComp3 = record
-    class function It: TComp3; static;
   end;
 
 procedure MyAssert(value: boolean);
@@ -261,7 +260,7 @@ begin
     if i mod 3 = 0 then
       ent.Add<TComp2>(TComp2.Create('test'));
     if i in [5, 6] then
-      ent.Add<TComp3>(TComp3.It)
+      ent.Add<TComp3>
   end;
   f := w.Filter.Include<TComp2>;
   MyAssert(SumItems(f) = 3 + 6 + 9);
@@ -385,13 +384,6 @@ end;
 constructor TComp2.Create(s: string);
 begin
   Self.s := s
-end;
-
-{ TComp3 }
-
-class function TComp3.It: TComp3;
-begin
-
 end;
 
 { TTestSystem }

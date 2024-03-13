@@ -48,7 +48,6 @@ type
   end;
 
   TFloating = record
-    class function It: TFloating; static;
   end;
 
 
@@ -94,7 +93,7 @@ begin
       2: begin
           ent.Add<TSpeed>(TSpeed.Create(random(7)-3, random(7)-3));
           ent.Add<TColor>(clBlue);
-          ent.Add<TFloating>(TFloating.It)
+          ent.Add<TFloating>
          end;
     end;
   end;
@@ -241,13 +240,6 @@ begin
   speed := e.GetPtr<TSpeed>;
   speed.v.Y := speed.v.Y - sign(speed.v.Y);
   speed.v.X := speed.v.X - sign(speed.v.X);
-end;
-
-{ TFloating }
-
-class function TFloating.It: TFloating;
-begin
-
 end;
 
 end.
