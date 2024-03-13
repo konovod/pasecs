@@ -28,12 +28,15 @@ type
   TComp3 = record
   end;
 
+var
+  AssertID: Integer = 0;
 procedure MyAssert(value: boolean);
 begin
+  Inc(AssertID);
   if value then
     write('.')
   else
-    raise Exception.Create('Test failed');
+    raise Exception.Create('Test #'+IntTostr(AssertID)+' failed');
 end;
 
 procedure SimpleTests;
