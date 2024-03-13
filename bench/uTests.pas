@@ -404,18 +404,20 @@ begin
   end;
   MyAssert(w.EntitiesCount = 9);
   stats := w.Stats;
-  for ent in w do
-    writeln(ent.ToString);
-  for stat in w.Stats do
-    writeln('  ', stat.Key, ': ', stat.Value);
   MyAssert(stats[0].value = 9);
-  MyAssert(stats[1].value = 9);
-  MyAssert(stats[2].value = 5);
+  for stat in stats do
+    if pos('TComp2', stat.key) > 0 then
+      MyAssert(stat.value = 5)
+    else
+      MyAssert(stat.value = 9);
   for ent in w.Query<TComp2> do
     ent.Remove<TComp2>;
   w.Stats(stats);
-  MyAssert(stats[1].value = 9);
-  MyAssert(stats[2].value = 0);
+  for stat in stats do
+    if pos('TComp2', stat.key) > 0 then
+      MyAssert(stat.value = 0)
+    else
+      MyAssert(stat.value = 9);
   w.Free;
 end;
 
