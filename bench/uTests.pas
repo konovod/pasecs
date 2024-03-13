@@ -206,7 +206,6 @@ begin
       ent := w.NewEntity;
       ent.Add<TComp1>(TComp1.Create(i, 1));
     end;
-{$IFNDEF FPC}
     for ent in w do
       if ent.Get<TComp1>.x in [7, 8] then
         ent.RemoveAll
@@ -216,37 +215,19 @@ begin
     for ent in w do
       inc(i, ent.Get<TComp1>.x);
     MyAssert(i = 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10);
-{$ENDIF}
   end;
 
   w.Free;
 end;
 
-{$IFDEF FPC}
-
-function SumItems(f: TECSFilter): integer;
-var
-  ent: TECSEntity;
-  c1: TComp1;
-begin
-  Result := 0;
-  for ent in f do
-  begin
-    ent.TryGet<TComp1>(c1);
-    Result := Result + c1.x
-  end;
-end;
-{$ELSE}
-
 function SumItems(f: TECSFilter): integer;
 var
   ent: TECSEntity;
 begin
   Result := 0;
   for ent in f do
-    Result := Result + ent.Get<TComp1>.x
+    Result := Result + (ent.Get<TComp1>.x)
 end;
-{$ENDIF}
 
 procedure TestFilters;
 var
@@ -347,9 +328,7 @@ begin
   systems.Execute;
   MyAssert(test.ExecuteCalled = 1);
 
-{$IFNDEF FPC}
   MyAssert(ent.Get<TComp1>.x = 1 + 10 + 10);
-{$ENDIF}
   MyAssert(test.TeardownCalled = 0);
   systems.Teardown;
   MyAssert(test.TeardownCalled = 1);
