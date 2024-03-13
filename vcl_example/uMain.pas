@@ -16,6 +16,7 @@ type
     Label1: TLabel;
     Label2: TLabel;
     LabeledEdit1: TLabeledEdit;
+    CheckBox1: TCheckBox;
     procedure PaintBox1Paint(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
@@ -110,14 +111,22 @@ var
   ent : TECSEntity;
   pos: TPoint;
   speed: TSpeed;
+  fast: Boolean;
 begin
   if not Assigned(GameWorld) then
     exit;
+  fast := CheckBox1.Checked;
   PaintBox1.Canvas.Brush.Color:=clWhite;
   PaintBox1.Canvas.FillRect(ClientRect);
   for ent in GameWorld.Query<TPosition> do
   begin
     pos := ent.Get<TPosition>.v;
+    if fast then
+    begin
+      PaintBox1.Canvas.Pixels[pos.X, pos.Y] := ent.Get<TColor>;
+      continue;
+    end;
+
     PaintBox1.Canvas.Pen.Color := ent.Get<TColor>;
     PaintBox1.Canvas.Ellipse(pos.X-2, pos.y-2, pos.X+2, pos.Y+2);
     if ent.TryGet<TSpeed>(speed) then

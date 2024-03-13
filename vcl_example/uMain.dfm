@@ -30,7 +30,7 @@ object Form1: TForm1
     Height = 425
     Align = alLeft
     TabOrder = 0
-    ExplicitHeight = 564
+    ExplicitHeight = 424
     object Label1: TLabel
       Left = 8
       Top = 91
@@ -64,6 +64,14 @@ object Form1: TForm1
       EditLabel.Caption = 'Entities:'
       TabOrder = 1
       Text = '2000'
+    end
+    object CheckBox1: TCheckBox
+      Left = 16
+      Top = 152
+      Width = 97
+      Height = 17
+      Caption = 'Fast render'
+      TabOrder = 2
     end
   end
   object Timer1: TTimer
