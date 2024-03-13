@@ -390,6 +390,7 @@ var
   w: TECSWorld;
   ent: TECSEntity;
   stats: TECSWorld.TStatsArray;
+  stat: TECSWorld.TStatsPair;
   i: Integer;
 begin
   w := TECSWorld.Create;
@@ -403,6 +404,10 @@ begin
   end;
   MyAssert(w.EntitiesCount = 9);
   stats := w.Stats;
+  for ent in w do
+    writeln(ent.ToString);
+  for stat in w.Stats do
+    writeln('  ', stat.Key, ': ', stat.Value);
   MyAssert(stats[0].value = 9);
   MyAssert(stats[1].value = 9);
   MyAssert(stats[2].value = 5);
