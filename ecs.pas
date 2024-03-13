@@ -90,7 +90,7 @@ type
 
   TECSFilter = class;
 
-  { TWorld }
+  { TECSWorld }
 
   TECSWorld = class
   protected
@@ -121,6 +121,13 @@ type
       function GetEnumerator: TGenericECSStorage.TStorageEntityEnumerator;
     end;
 
+    TStatsPair = record
+        key: String;
+        value: Integer;
+    end;
+
+    TStatsArray = array of TStatsPair;
+
   function Filter: TECSFilter;
   function NewEntity: TECSEntity;
   constructor Create;
@@ -130,6 +137,9 @@ type
   function Query<T>: TStorageWrapper;
   function Count<T>: Integer;
   function Exists<T>: Boolean;
+  function Stats: TStatsArray; overload;
+  procedure Stats(var list: TStatsArray); overload;
+  function EntitiesCount: Integer;
   end;
 
   TECSFilter = class
@@ -366,7 +376,7 @@ begin
     Remove(Id)
 end;
 
-{ TEntity }
+{ TECSEntity }
 
 procedure TECSEntity.AddOrUpdate<T>(item: T);
 begin
@@ -463,7 +473,7 @@ begin
   end;
 end;
 
-{ TWorld }
+{ TECSWorld }
 
 function TECSWorld.GetEnumerator: TWorldEntityEnumerator;
 begin
@@ -569,6 +579,33 @@ end;
 function TECSWorld.Filter: TECSFilter;
 begin
   Result := TECSFilter.Create(Self)
+end;
+
+function TECSWorld.Stats: TStatsArray;
+begin
+  Stats(Result);
+end;
+
+procedure TECSWorld.Stats(var list: TStatsArray);
+var
+  i: Integer;
+  store: TGenericECSStorage;
+begin
+  SetLength(list, Storages.Count+1);
+  list[0].key := '#Entities';
+  list[0].value := EntitiesCount;
+  i := 1;
+  for store in Storages.Values do
+  begin
+    list[i].Key := store.ComponentName;
+    list[i].Value := store.DenseUsed;
+    inc(i);
+  end;
+end;
+
+function TECSWorld.EntitiesCount: Integer;
+begin
+  Result := CurId - NFreeItems;
 end;
 
 { TGenericECSStorage }

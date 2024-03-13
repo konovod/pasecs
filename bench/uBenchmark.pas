@@ -259,10 +259,14 @@ end;
 procedure DoBenchmarks;
 var
   mem: integer;
+  stat: TECSWorld.TStatsPair;
 begin
   mem := UsedMemory;
   world := InitBenchmarkWorld;
   writeln('benchmark world size: ', (UsedMemory - mem) / 1000000:0:6, ' MB');
+  writeln('Stats: ');
+  for stat in world.Stats do
+    writeln('  ', stat.Key, ': ', stat.Value);
 
   writeln('create and clear benchmark world: ',
     Benchmark(BenchBenchmarkWorld), ' us');

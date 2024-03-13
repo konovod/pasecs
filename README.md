@@ -161,6 +161,20 @@ begin
   // so don't save a pointer if you are not sure that component won't be deleted
 ```
 
+#### Tags
+It is not uncommon in ECS to use a components without data, they are called "tags". As constructing of such entity can be cumbersome in pascal, PasECS provides overload of `Add` and `AddOrUpdate` without params:
+
+```pascal
+type
+  TFloating = record
+  end;
+  ...
+
+  ent.Add<TColor>(clBlue); // adds normal component TColor
+  ent.Add<TFloating>; //adds tag TFloating to entity
+```
+
+
 ### System
 Сontainer for logic for processing filtered entities. 
 User class can override `Init`, `Execute`, `Teardown`, `Filter` and `Process` (in any combination. Just skip methods you don't need).
@@ -274,10 +288,24 @@ end;
 //TODO
 
 In a folder `bench` there is a tests suite and benchmark, you can see it for some examples. Proper example is planned.
+In a folder vcl_example i've added simple example of adding ecs to VCL application.
 
 ## Other features
 ### Statistics
- //TODO
+ You can get total number of alive entities using `world.EntitiesCount`
+ It is also possible to get statistics of how much components exists in world:
+```pascal
+var
+  w: TECSWorld;
+  stats: TECSWorld.TStatsArray;
+  stat: TECSWorld.TStatsPair;
+begin
+...
+  stats := w.Stats; //alternatively, you can use `w.Stats(stats)` to avoid allocating array every time
+  for stat in stats do
+    writeln('  ', stat.Key, ': ', stat.Value);
+end;
+```
 
 ### Iterating without filter
 Sometimes you just need to check if some component is present in a world. No need to create a filter for it - just use 
@@ -342,7 +370,8 @@ This could be useful when iterating inside `System#process`:
 
 ## Plans
 ### Short-term
- - [ ] runtime statistics
+ - [x] runtime statistics
+   - [ ] automatic benchmark in TECSSystems?
  - [x] `for entity in World.Query<T>...`
  - [x] `if World.Exists<T> then...`
  - [x] check correctness when deleting entities during iteration

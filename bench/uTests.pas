@@ -385,6 +385,37 @@ begin
   w.Free;
 end;
 
+procedure TestStats;
+var
+  w: TECSWorld;
+  ent: TECSEntity;
+  stats: TECSWorld.TStatsArray;
+  i: Integer;
+begin
+  w := TECSWorld.Create;
+  for i := 1 to 10 do
+  begin
+    ent := w.NewEntity;
+    ent.Add<TComp1>(TComp1.Create(1, 1));
+    ent.Add<TComp2>(TComp2.Create('test'));
+    if odd(i) then ent.remove<TComp2>;
+    if i = 5 then ent.remove<TComp1>;
+  end;
+  MyAssert(w.EntitiesCount = 9);
+  stats := w.Stats;
+  MyAssert(stats[0].value = 9);
+  MyAssert(stats[1].value = 9);
+  MyAssert(stats[2].value = 5);
+  for ent in w.Query<TComp2> do
+    ent.Remove<TComp2>;
+  w.Stats(stats);
+  MyAssert(stats[1].value = 9);
+  MyAssert(stats[2].value = 0);
+  w.Free;
+end;
+
+
+
 procedure DoTests;
 begin
   writeln('Starting tests suite:');
@@ -396,10 +427,11 @@ begin
   TestWorldIterationWithAdditionDeletion;
   TestFilters;
   TestFiltersWithDeletion;
+  TestQuery;
   TestQueryWithDeletion;
   TestQueryInsideQuery;
   TestSystems;
-  TestQuery;
+  TestStats;
   writeln;
   writeln('Tests passed');
 end;
