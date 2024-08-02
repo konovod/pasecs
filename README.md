@@ -13,10 +13,13 @@
   * [TECSWorld](#ecsworld)
   * [TECSFilter](#ecsfilter)
   * [TECSSystems](#ecssystems)
+  * [TRemoveAll](#tremoveall)
 * [Engine integration](#engine-integration)
 * [Other features](#other-features)
   * [Statistics](#statistics)
   * [Iterating without filter](#iterating-without-filter)
+  * [Singleton components](#singleton-components)
+  * [Pack and Unpack](#pack-and-unpack)
   * [Callbacks](#callbacks)
 * [Benchmarks](#benchmarks)
 * [Plans](#plans)
@@ -25,7 +28,7 @@
 
 This is a ECS library for Delphi/FreePascal.
 
-Supported Delphi version: I've tested it on Delphi 11.2, should work on older versions with generics too. Win32 and Win64 works, Linux should work too, Android is planned.
+Supported Delphi version: I've tested it on Delphi 11.2, should work on older versions with generics too. Win32 and Win64 works, Linux should work too, Android seems working.
 Supported FPC version: I've tested it on FPC 3.2.2.
 
 The library is a single file `ecs.pas`, add it to your project and then do:
@@ -87,7 +90,7 @@ begin
 
   // create systems
   systems = TECSSystems.Create(world);
-  systems.add(UpdatePositionSystem) //you can add a created system or just pass a class
+  systems.add(UpdatePositionSystem); //you can add a created system or just pass a class
 
   // run systems
   systems.Init;
@@ -133,10 +136,11 @@ comp1.y := 0;
 comp1.name := 'name';
 Entity := World.NewEntity;
 Entity.Add<TComp1>(comp1);
-// Will raise exception if component isn't present
-comp1 = Entity.Get<TComp1>;
+comp1 = Entity.Get<TComp1>; // Will raise exception if component isn't present
 if Entity.TryGet<TComp2>(comp2) then ... //will return false if component isn't present
-Entity.Remove<TComp1>;
+if Entity.Has<TComp2> then ... //will return false if component isn't present
+Entity.Remove<TComp1>; //Removes TComp1 from entity. Will raise exception if component isn't present
+Entity.RemoveIfPresent<TComp1>; //Removes TComp1 from entity. Will do nothing if component isn't present
 ```
 
 They can be updated (changed) using several ways:
@@ -284,11 +288,25 @@ begin
   Add(DrawDebugSystem);
 end;
 ```
+
+#### TRemoveAll
+Specialized system that removes all components of type T. This is a useful pattern for so-called "one-frame components":
+```pascal
+  systems.Add(CreateDamageEvents); //creates TDamageEvent on entities
+  systems.Add(ProcessDamageOnBuildings); //processes TDamageEvents
+  systems.Add(ProcessDamageOnUnits); //processes TDamageEvents
+  systems.Add(TRemoveAll<TDamageEvent>); //all TDamageEvent are removed at this point 
+```
+
+
 ### Engine integration
 //TODO
 
 In a folder `bench` there is a tests suite and benchmark, you can see it for some examples. Proper example is planned.
 In a folder vcl_example i've added simple example of adding ecs to VCL application.
+
+There is an ongoing hobby project that uses this library on FMX\Android target: https://gitlab.com/kipar/mymars 
+It is far from a clean code though.
 
 ## Other features
 ### Statistics
@@ -362,6 +380,32 @@ This could be useful when iterating inside `System#process`:
   end;
 ```
 
+### Singleton components
+This is sometimes useful to create components that exists only on one entity and easily access them from anywhere. For now, following construction is provided:
+
+```pascal
+  w: TECSWorld;
+begin
+  w := TECSWorld.Create;
+  w.NewEntity.Add(TConfig.CreateFromFile...);
+
+  e := w.Singleton<TConfig>; //returns entity that has the only instance of TConfig. Exception will be raised if component is not present or exists more than one.
+  config := w.SingletonComp<TConfig>; //same, but returns not entity but a component TConfig
+```
+
+### Pack and Unpack
+It is common in pascal to store and pass things as pointers or TObject. Simple example is `TStringList.AddObject(name, item);`
+As TECSEntity isn't descendent from TObject, it is not possible to pass it this way. So library provides a solution:
+
+```pascal
+e := world.NewEntity;
+//...
+ListBox1.Lines.AddObject(e.Get<Name>.name, e.Pack); //Pack will return pointer that is basically just an entity id.
+//...
+e := world.Unpack(ListBox1.Items.Objects[ListBox1.ItemIndex]); //Unpack will recreate an entity from this pointer. Note that you need to know `world` to do unpack.
+```
+
+
 ### Callbacks
  //TODO
  
@@ -379,11 +423,11 @@ This could be useful when iterating inside `System#process`:
  - [x] CI with FPC
  - [ ] generations in EntityID
 ### Mid-term
- - [ ] SingleFrame components
- - [ ] Singleton components
+ - [x] SingleFrame components
+ - [x] Singleton components
  - [ ] Callbacks on adding\deleting components
  - [ ] Multiple components
- - [ ] Android target (`[weak]` annotations etc)
+ - [x] Android target (`[weak]` annotations etc) Seems already working without changes
  - [x] Switch to sparsesets? archetypes?
 
 ## Contributors

@@ -10,10 +10,10 @@ interface
 uses Generics.Collections, SysUtils;
 
 const
-  NO_ENTITY = UInt64(-1);
+  NO_ENTITY = UInt32(-1);
 
 type
-  TEntityID = UInt64;
+  TEntityID = UInt32;
 
   TECSWorld = class;
 
@@ -32,8 +32,10 @@ type
     procedure AddOrUpdate<T>(item: T); overload;
     procedure AddOrUpdate<T>(); overload;
     procedure Remove<T>();
+    procedure RemoveIfPresent<T>();
     procedure RemoveAll;
     function ToString: string;
+    function Pack: Pointer;
   end;
 
   TGenericECSStorage = class
@@ -135,11 +137,14 @@ type
   procedure Clear;
   function GetEnumerator: TWorldEntityEnumerator;
   function Query<T>: TStorageWrapper;
+  function Singleton<T>: TECSEntity;
+  function SingletonComp<T>: T;
   function Count<T>: Integer;
   function Exists<T>: Boolean;
   function Stats: TStatsArray; overload;
   procedure Stats(var list: TStatsArray); overload;
   function EntitiesCount: Integer;
+  function Unpack(p : Pointer): TECSEntity;
   end;
 
   TECSFilter = class
@@ -174,6 +179,8 @@ type
     constructor Create(aWorld: TECSWorld);
   end;
 
+  { TECSSystem }
+
   TECSSystem = class
   private
     FWorld: TECSWorld;
@@ -183,6 +190,7 @@ type
     procedure Init; virtual;
     function Filter: TECSFilter; virtual;
     procedure Execute; virtual;
+    procedure PreProcess; virtual;
     procedure Process(e: TECSEntity); virtual;
     procedure Teardown; virtual;
   end;
@@ -205,6 +213,10 @@ type
     function Add(sys: TECSSystem): TECSSystems; overload;
     function Add(sys: TECSSystemClass): TECSSystems; overload;
     destructor Destroy; override;
+  end;
+
+  TRemoveAll<T> = class(TECSSystem)
+    procedure Execute; override;
   end;
 
 implementation
@@ -446,6 +458,11 @@ begin
   World.GetStorage<T>.Remove(Id);
 end;
 
+procedure TECSEntity.RemoveIfPresent<T>;
+begin
+  World.GetStorage<T>.vRemoveIfExists(Id);
+end;
+
 procedure TECSEntity.RemoveAll;
 var
   store: TGenericECSStorage;
@@ -471,6 +488,11 @@ begin
     else
       Result := Result + ']'
   end;
+end;
+
+function TECSEntity.Pack : Pointer;
+begin
+  Result := Pointer(Id); //TODO - 32-bit systems with 64-bit id
 end;
 
 { TECSWorld }
@@ -606,6 +628,34 @@ end;
 function TECSWorld.EntitiesCount: Integer;
 begin
   Result := CurId - NFreeItems;
+end;
+
+function TECSWorld.Singleton<T>: TECSEntity;
+var
+  found: Boolean;
+  e: TECSEntity;
+begin
+  found := False;
+  for e in Self.Query<T> do
+  begin
+    if found then
+      raise Exception.Create('Singleton component present on more than one entity');
+    found := true;
+    Result := e;
+  end;
+  if not found then
+    raise Exception.Create('Singleton component not found');
+end;
+
+function TECSWorld.SingletonComp<T>: T;
+begin
+  Result := Singleton<T>.Get<T>
+end;
+
+function TECSWorld.Unpack(p: Pointer): TECSEntity;
+begin
+  Result.World := self;
+  Result.Id := TEntityId(p);
 end;
 
 { TGenericECSStorage }
@@ -806,6 +856,11 @@ begin
   // does nothing
 end;
 
+procedure TECSSystem.PreProcess;
+begin
+  // does nothing
+end;
+
 function TECSSystem.Filter: TECSFilter;
 begin
   Result := nil;
@@ -868,6 +923,7 @@ begin
   for i := 0 to length(Items) - 1 do
   begin
     sys := Items[i];
+    sys.PreProcess;
     flt := Filters[i];
     if Assigned(flt) then
       for ent in flt do
@@ -916,6 +972,15 @@ function TECSWorld.TStorageWrapper.GetEnumerator
   : TGenericECSStorage.TStorageEntityEnumerator;
 begin
   Result := Storage.GetEnumerator
+end;
+
+{ TRemoveAll<T> }
+
+procedure TRemoveAll<T>.Execute;
+var e: TECSEntity;
+begin
+  for e in world.Query<T> do
+    e.Remove<T>
 end;
 
 end.

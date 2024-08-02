@@ -58,6 +58,10 @@ begin
   MyAssert(e1.Get<TComp2>.s = 'abc');
   e1.remove<TComp2>;
   MyAssert(e2.Get<TComp2>.s = 'e2');
+  e1.RemoveIfPresent<TComp2>;
+  e2.RemoveIfPresent<TComp2>;
+  MyAssert(not (e1.Has<TComp2>()));
+  MyAssert(not (e2.Has<TComp2>()));
   w.Free;
 end;
 
@@ -85,6 +89,25 @@ begin
   MyAssert(ent.Get<TComp2>.s = 'test');
   w.Free;
 end;
+
+procedure TestPackUnpack;
+var
+  w: TECSWorld;
+  ent: TECSEntity;
+  i: Integer;
+  v: Pointer;
+begin
+  w := TECSWorld.Create;
+  for i := 1 to 10 do
+  begin
+    ent := w.NewEntity;
+    ent.Add<TComp1>(TComp1.Create(i, i));
+    if i = 5 then v := ent.Pack;
+  end;
+  MyAssert(w.Unpack(v).Get<TComp1>.x = 5);
+  w.Free;
+end;
+
 
 procedure TestQuery;
 var
@@ -320,6 +343,20 @@ begin
   w.Free;
 end;
 
+procedure TestSingleton;
+var
+  w: TECSWorld;
+  i, sum: integer;
+  ent: TECSEntity;
+begin
+  w := TECSWorld.Create;
+  w.NewEntity.Add<TComp1>(TComp1.Create(1,1));
+  w.NewEntity.Add<TComp2>(TComp2.Create('111'));
+  MyAssert(w.Singleton<TComp2>().Get<TComp2>.s = '111');
+  MyAssert(w.SingletonComp<TComp1>().x = 1);
+  w.Free;
+end;
+
 procedure TestQueryInsideQuery;
 var
   w: TECSWorld;
@@ -344,10 +381,14 @@ begin
 end;
 
 type
+
+  { TTestSystem }
+
   TTestSystem = class(TECSSystem)
-    InitCalled, ExecuteCalled, TeardownCalled: integer;
+    InitCalled, PreprocessCalled, ExecuteCalled, TeardownCalled: integer;
     procedure Init; override;
     procedure Teardown; override;
+    procedure Preprocess; override;
     procedure Execute; override;
     function Filter: TECSFilter; override;
     procedure Process(e: TECSEntity); override;
@@ -374,13 +415,47 @@ begin
   ent.Add<TComp1>(TComp1.Create(1, 10));
 
   MyAssert(test.ExecuteCalled = 0);
+  MyAssert(test.PreprocessCalled = 0);
   systems.Execute;
   MyAssert(test.ExecuteCalled = 1);
+  MyAssert(test.PreprocessCalled = 1);
 
   MyAssert(ent.Get<TComp1>.x = 1 + 10 + 10);
   MyAssert(test.TeardownCalled = 0);
   systems.Teardown;
   MyAssert(test.TeardownCalled = 1);
+  systems.Free;
+  w.Free;
+end;
+
+procedure TestRemoveAll;
+var
+  w: TECSWorld;
+  ent: TECSEntity;
+  systems: TECSSystems;
+  test: TTestSystem;
+begin
+  w := TECSWorld.Create;
+  systems := TECSSystems.Create(w);
+  systems.Add(TRemoveAll<TComp2>);
+  systems.Init;
+
+  ent := w.NewEntity;
+  ent.Add<TComp1>(TComp1.Create(1, 10));
+  ent.Add<TComp2>(TComp2.Create('111'));
+
+  ent := w.NewEntity;
+  ent.Add<TComp2>(TComp2.Create('222'));
+
+  MyAssert(w.EntitiesCount = 2);
+  MyAssert(w.Count<TComp2> = 2);
+
+  systems.Execute;
+
+  MyAssert(w.EntitiesCount = 1);
+  MyAssert(w.Count<TComp2> = 0);
+
+  systems.Teardown;
   systems.Free;
   w.Free;
 end;
@@ -439,6 +514,9 @@ begin
   TestQueryInsideQuery;
   TestSystems;
   TestStats;
+  TestPackUnpack;
+  TestRemoveAll;
+  TestSingleton;
   writeln;
   writeln('Tests passed');
 end;
@@ -486,6 +564,11 @@ end;
 procedure TTestSystem.Teardown;
 begin
   inc(TeardownCalled)
+end;
+
+procedure TTestSystem.Preprocess;
+begin
+  Inc(PreprocessCalled);
 end;
 
 end.
