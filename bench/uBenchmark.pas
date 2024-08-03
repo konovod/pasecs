@@ -149,6 +149,7 @@ type
   end;
 
   TEmptyFilterSystem = class(TECSSystem)
+  public
     count: integer;
     function Filter: TECSFilter; override;
     procedure Process(e: TECSEntity); override;
@@ -163,6 +164,7 @@ type
   end;
 
   TAskComponent<Positive> = class(TECSSystem)
+  public
     ent: TECSEntity;
     found: Boolean;
     procedure Execute; override;
@@ -171,6 +173,7 @@ type
   end;
 
   TGetComponent<Positive> = class(TECSSystem)
+  public
     ent: TECSEntity;
     found: Positive;
     procedure Execute; override;
@@ -179,6 +182,7 @@ type
   end;
 
   TCountComp1 = class(TECSSystem)
+  public
     count: integer;
     function Filter: TECSFilter; override;
     procedure Process(e: TECSEntity); override;
@@ -209,8 +213,8 @@ type
   end;
 
   TComplexFilter = class(TECSSystem)
-    count: integer;
   public
+    count: integer;
     function Filter: TECSFilter; override;
     procedure Process(e: TECSEntity); override;
         procedure Execute; override;

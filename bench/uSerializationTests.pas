@@ -18,11 +18,19 @@ type
     a: Integer;
     b: string;
     c: Double;
+    z: array[1..4] of Integer;
   end;
 
   TComponentWithEntity = record
     n: integer;
     e: TECSEntity;
+  end;
+
+
+  TCrunchArray = array[1..10] of TECSEntity;
+  TComponentWithEntitiesArray = record
+    n: integer;
+    e: TCrunchArray;
   end;
 
   TEnumComponent = (Value1, Value2, Value3);
@@ -58,6 +66,13 @@ begin
   c3.n := 10000;
   c3.e.Id := NO_ENTITY;
   w1.NewEntity.Add(c3);
+
+  var c4: TComponentWithEntitiesArray;
+  c4.n := 2;
+  c4.e[1] := ent;
+  c4.e[2] := w1.NewEntity;
+  w1.NewEntity.Add(c4);
+
   writeln('old: ');
   for var pair in w1.Stats do
     writeln(pair.key, ': ', pair.value);
@@ -78,6 +93,8 @@ begin
     MyAssert(e.Get<TComponentWithString>.b = 'This is a string');
   for var e in w2.Query<TComponentWithEntity> do
     MyAssert(e.Get<TComponentWithEntity>.e.World = w2);
+  for var e in w2.Query<TComponentWithEntitiesArray> do
+    MyAssert((e.Get<TComponentWithEntitiesArray>.e[1].World = w2) and (e.Get<TComponentWithEntitiesArray>.e[2].World = w2));
 
 
   w2.Free;

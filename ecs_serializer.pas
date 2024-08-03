@@ -16,7 +16,7 @@ type
 TSerializableWorld = class(TECSWorld)
   procedure DumpStorage<T>(s: TStream);
   procedure LoadStorage<T>(s: TStream);
-  procedure PatchItem<T>(var x: T);
+  procedure PatchItem(var x; LContext: TRttiContext; typ: TRTTIType);
 end;
 TSerializableGenericStorage = class(TGenericECSStorage)
 end;
@@ -82,6 +82,7 @@ begin
   ww.DumpStorage<TComponentWithString>(s);
   ww.DumpStorage<TComponentWithEntity>(s);
   ww.DumpStorage<TEnumComponent>(s);
+  ww.DumpStorage<TComponentWithEntitiesArray>(s);
 end;
 
 function LoadWorld(s: TStream): TECSWorld;
@@ -108,6 +109,7 @@ begin
   ww.GetStorage<TComponentWithString>;
   ww.GetStorage<TComponentWithEntity>;
   ww.GetStorage<TEnumComponent>;
+  ww.GetStorage<TComponentWithEntitiesArray>;
 
   for var index := 0 to n-1 do
   begin
@@ -144,6 +146,7 @@ begin
   ww.LoadStorage<TComponentWithString>(s);
   ww.LoadStorage<TComponentWithEntity>(s);
   ww.LoadStorage<TEnumComponent>(s);
+  ww.LoadStorage<TComponentWithEntitiesArray>(s);
   writeln('DONE');
 end;
 
@@ -159,22 +162,39 @@ begin
 end;
 
 procedure TSerializableWorld.LoadStorage<T>(s: TStream);
+var
+  LContext: TRttiContext;
 begin
+  LContext := TRttiContext.Create;
   var store := TSerializableStorage<T>(GetStorage<T>);
   SetLength(store.Payload, store.DenseUsed);
   TKBDynamic.ReadFrom(s, store.Payload, TypeInfo(TArray<T>));
   for var i := 0 to store.DenseUsed-1 do
-    PatchItem<T>(store.Payload[i])
-
+    PatchItem(store.Payload[i], LContext, LContext.GetType(TypeInfo(T)));
+  LContext.Free;
 end;
 
-procedure TSerializableWorld.PatchItem<T>(var x: T);
-var
-  LContext: TRttiContext;
+procedure TSerializableWorld.PatchItem(var x; LContext: TRttiContext; typ: TRTTIType);
 begin
-  var typ := LContext.GetType(TypeInfo(T));
+  writeln('!',typ.QualifiedName);
   if typ.ToString = 'TECSEntity' then
-    TECSEntity((@x)^).World := self;
+    TECSEntity((@x)^).World := self
+  else if typ.TypeKind = tkArray then
+  begin
+    var as_arr := TRttiArrayType(typ);
+    if as_arr.ElementType = nil then
+      exit;
+    var size := as_arr.ElementType.TypeSize;
+    for var I := 0 to as_arr.TotalElementCount-1 do
+      PatchItem((PByte(@x)+size*i)^, LContext, as_arr.ElementType);
+  end
+  else if typ.TypeKind = tkRecord then
+  begin
+    var as_rec := TRttiRecordType(typ);
+    for var field in as_rec.GetFields do
+      if field.FieldType <> nil then
+        PatchItem((PByte(@x)+field.Offset)^, LContext, field.FieldType);
+  end;
 end;
 
 end.
