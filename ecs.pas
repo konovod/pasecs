@@ -692,8 +692,9 @@ function TGenericECSStorage.TStorageEntityEnumerator.MoveNext: Boolean;
 begin
   if (index < 0) or (Parent.Dense[index] = LastID) then
     inc(Index);
-  LastID := Parent.Dense[index];
   Result := index < Parent.DenseUsed;
+  if Result then
+    LastID := Parent.Dense[index];
 end;
 
 { TECSWorld.TWorldEntityEnumerator }
