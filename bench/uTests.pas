@@ -9,6 +9,7 @@ interface
 uses SysUtils;
 
 procedure DoTests;
+procedure MyAssert(value: boolean);
 
 implementation
 
@@ -385,6 +386,7 @@ type
   { TTestSystem }
 
   TTestSystem = class(TECSSystem)
+  public
     InitCalled, PreprocessCalled, ExecuteCalled, TeardownCalled: integer;
     procedure Init; override;
     procedure Teardown; override;
@@ -498,29 +500,6 @@ end;
 
 
 
-procedure DoTests;
-begin
-  writeln('Starting tests suite:');
-  SimpleTests;
-  TestAddingComponents;
-  TestAddAndDelete;
-  TestWorldIteration;
-  TestWorldIterationWithDeletion;
-  TestWorldIterationWithAdditionDeletion;
-  TestFilters;
-  TestFiltersWithDeletion;
-  TestQuery;
-  TestQueryWithDeletion;
-  TestQueryInsideQuery;
-  TestSystems;
-  TestStats;
-  TestPackUnpack;
-  TestRemoveAll;
-  TestSingleton;
-  writeln;
-  writeln('Tests passed');
-end;
-
 { TComp1 }
 
 constructor TComp1.Create(x, y: integer);
@@ -570,5 +549,29 @@ procedure TTestSystem.Preprocess;
 begin
   Inc(PreprocessCalled);
 end;
+
+procedure DoTests;
+begin
+  writeln('Starting tests suite:');
+  SimpleTests;
+  TestAddingComponents;
+  TestAddAndDelete;
+  TestWorldIteration;
+  TestWorldIterationWithDeletion;
+  TestWorldIterationWithAdditionDeletion;
+  TestFilters;
+  TestFiltersWithDeletion;
+  TestQuery;
+  TestQueryWithDeletion;
+  TestQueryInsideQuery;
+  TestSystems;
+  TestStats;
+  TestPackUnpack;
+  TestRemoveAll;
+  TestSingleton;
+  writeln;
+  writeln('Tests passed');
+end;
+
 
 end.
