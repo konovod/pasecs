@@ -2,7 +2,7 @@ unit ecs_serializer;
 
 interface
 
-uses ecs, Classes, System.Rtti, Generics.Collections;
+uses ecs, Classes, SysUtils, Math, System.Rtti, Generics.Collections;
 
 procedure DumpWorld(w: TECSWorld; s: TStream);
 function LoadWorld(s: TStream): TECSWorld;
@@ -83,6 +83,7 @@ begin
   ww.DumpStorage<TComponentWithEntity>(s);
   ww.DumpStorage<TEnumComponent>(s);
   ww.DumpStorage<TComponentWithEntitiesArray>(s);
+  ww.DumpStorage<TNonExistant>(s);
 end;
 
 function LoadWorld(s: TStream): TECSWorld;
@@ -97,7 +98,7 @@ begin
   SetLength(ww.CountComponents, ww.SparseSize);
   for var i := 0 to ww.SparseSize-1 do
     s.ReadData(ww.CountComponents[i]);
-  SetLength(ww.FreeItems,ww.NFreeItems);
+  SetLength(ww.FreeItems,ww.SparseSize);
   for var i := 0 to ww.NFreeItems-1 do
     s.readData(ww.FreeItems[i]);
   var n : NativeInt;
@@ -110,6 +111,7 @@ begin
   ww.GetStorage<TComponentWithEntity>;
   ww.GetStorage<TEnumComponent>;
   ww.GetStorage<TComponentWithEntitiesArray>;
+  ww.GetStorage<TNonExistant>;
 
   for var index := 0 to n-1 do
   begin
@@ -118,7 +120,6 @@ begin
     var str: string;
     SetLength(str, len);
     s.Read(PChar(str)^, len*2);
-    writeln(str);
 
     var store : TSerializableGenericStorage := nil;
     for var st in ww.Storages.Values do
@@ -129,14 +130,13 @@ begin
       end;
     if store = nil then
     begin
-      writeln('not found: '+str);
-      readln;
+      raise Exception.Create('not found: '+str);
     end;
     s.ReadData(store.DenseUsed);
     SetLength(store.Sparse, ww.SparseSize);
     for var i := 0 to ww.SparseSize-1 do
       s.ReadData(store.Sparse[i]);
-    SetLength(store.Dense, store.DenseUsed);
+    SetLength(store.Dense, Max(store.DenseUsed, 1));
     for var i := 0 to store.DenseUsed-1 do
       s.ReadData(store.Dense[i]);
   end;
@@ -147,7 +147,7 @@ begin
   ww.LoadStorage<TComponentWithEntity>(s);
   ww.LoadStorage<TEnumComponent>(s);
   ww.LoadStorage<TComponentWithEntitiesArray>(s);
-  writeln('DONE');
+  ww.LoadStorage<TNonExistant>(s);
 end;
 
 { TSerializableWorld }
@@ -156,8 +156,6 @@ procedure TSerializableWorld.DumpStorage<T>(s: TStream);
 begin
   var store := TSerializableStorage<T>(GetStorage<T>);
   SetLength(store.Payload, store.DenseUsed);
-//  for var x in store.Payload do
-//    TKBDynamic.WriteTo(s, x, TypeInfo(T));
   TKBDynamic.WriteTo(s, store.Payload, TypeInfo(TArray<T>));
 end;
 
@@ -167,16 +165,17 @@ var
 begin
   LContext := TRttiContext.Create;
   var store := TSerializableStorage<T>(GetStorage<T>);
-  SetLength(store.Payload, store.DenseUsed);
   TKBDynamic.ReadFrom(s, store.Payload, TypeInfo(TArray<T>));
   for var i := 0 to store.DenseUsed-1 do
     PatchItem(store.Payload[i], LContext, LContext.GetType(TypeInfo(T)));
+  if store.DenseUsed = 0 then
+    SetLength(store.Payload, 1);
   LContext.Free;
 end;
 
 procedure TSerializableWorld.PatchItem(var x; LContext: TRttiContext; typ: TRTTIType);
 begin
-  writeln('!',typ.QualifiedName);
+//  writeln('!',typ.QualifiedName);
   if typ.ToString = 'TECSEntity' then
     TECSEntity((@x)^).World := self
   else if typ.TypeKind = tkArray then

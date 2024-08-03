@@ -35,6 +35,9 @@ type
 
   TEnumComponent = (Value1, Value2, Value3);
 
+  TNonExistant = record
+    n: Integer;
+  end;
 
 implementation
 
@@ -96,6 +99,10 @@ begin
   for var e in w2.Query<TComponentWithEntitiesArray> do
     MyAssert((e.Get<TComponentWithEntitiesArray>.e[1].World = w2) and (e.Get<TComponentWithEntitiesArray>.e[2].World = w2));
 
+  w2.Singleton<TComponentWithEntitiesArray>.Remove<TComponentWithEntitiesArray>;
+
+  var n: TNonExistant;
+  w2.NewEntity.Add(n);
 
   w2.Free;
   mem.Free;
