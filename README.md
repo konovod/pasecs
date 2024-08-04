@@ -10,9 +10,9 @@
   * [Component](#component)
   * [System](#system)
 * [Other classes](#other-classes)
-  * [TECSWorld](#ecsworld)
-  * [TECSFilter](#ecsfilter)
-  * [TECSSystems](#ecssystems)
+  * [TECSWorld](#tecsworld)
+  * [TECSFilter](#tecsfilter)
+  * [TECSSystems](#tecssystems)
   * [TRemoveAll](#tremoveall)
 * [Engine integration](#engine-integration)
 * [Other features](#other-features)
@@ -419,6 +419,7 @@ e := world.Unpack(ListBox1.Items.Objects[ListBox1.ItemIndex]); //Unpack will rec
 
 ## Benchmarks
 //TODO
+I compared it with my https://github.com/konovod/myecs and it is similar in speed. In short, adding\removing components is fast, iterating isn't.
 
 ## Plans
 ### Short-term
@@ -427,7 +428,7 @@ e := world.Unpack(ListBox1.Items.Objects[ListBox1.ItemIndex]); //Unpack will rec
  - [x] `for entity in World.Query<T>...`
  - [x] `if World.Exists<T> then...`
  - [x] check correctness when deleting entities during iteration
- - [ ] nonoengine integration example, maybe example with VCL
+ - [x] nonoengine integration example, maybe example with VCL
  - [x] CI with FPC
  - [ ] generations in EntityID
 ### Mid-term
