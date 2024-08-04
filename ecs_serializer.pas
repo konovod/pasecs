@@ -69,8 +69,6 @@ begin
     s.WriteData(length(store.ClassName));
     s.Write(PChar(store.ClassName)^, length(store.ClassName)*2);
     s.WriteData(store.DenseUsed);
-    for var i := 0 to ww.SparseSize-1 do
-      s.WriteData(store.Sparse[i]);
     for var i := 0 to store.DenseUsed-1 do
       s.WriteData(store.Dense[i]);
     //TODO - well, payloads
@@ -133,12 +131,13 @@ begin
       raise Exception.Create('not found: '+str);
     end;
     s.ReadData(store.DenseUsed);
-    SetLength(store.Sparse, ww.SparseSize);
-    for var i := 0 to ww.SparseSize-1 do
-      s.ReadData(store.Sparse[i]);
     SetLength(store.Dense, Max(store.DenseUsed, 1));
+    SetLength(store.Sparse, ww.SparseSize);
     for var i := 0 to store.DenseUsed-1 do
+    begin
       s.ReadData(store.Dense[i]);
+      store.Sparse[store.Dense[i]] := i;
+    end;
   end;
 
   ww.LoadStorage<TEmptyComponent>(s);
