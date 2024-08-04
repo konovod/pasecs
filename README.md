@@ -21,6 +21,7 @@
   * [Singleton components](#singleton-components)
   * [Pack and Unpack](#pack-and-unpack)
   * [Callbacks](#callbacks)
+  * [Serialization](#serialization)
 * [Benchmarks](#benchmarks)
 * [Plans](#plans)
 * [Contributors](#contributors)
@@ -408,7 +409,14 @@ e := world.Unpack(ListBox1.Items.Objects[ListBox1.ItemIndex]); //Unpack will rec
 
 ### Callbacks
  //TODO
- 
+
+### Serialization
+  There is an experimental branch https://github.com/konovod/pasecs/tree/serialization that uses Delphi RTTI to make it possible to binary serialize\deserialize entire world.
+- Delphi-only for now (FPC has rtti too, but i use uKBDynamic and it supports only Delphi)
+- support simple types, array, dynarrays and sets in components
+- it patches TECSEntity in a components (this has limitations)
+- main problem - all component types has to be manually registered in serializer. I don't know another way to create generic storages when loading world (RTTI won't allow to create `TECSStorage<TSomeComponent>` because `TECSStorage<TSomeComponent>` is somehow not in RTTI types list).
+
 ## Benchmarks
 //TODO
 
