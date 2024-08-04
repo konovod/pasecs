@@ -155,7 +155,7 @@ end;
 procedure TSerializableWorld.DumpStorage<T>(s: TStream);
 begin
   var store := TSerializableStorage<T>(GetStorage<T>);
-  SetLength(store.Payload, store.DenseUsed);
+  SetLength(store.Payload, Max(store.DenseUsed, 1));
   TKBDynamic.WriteTo(s, store.Payload, TypeInfo(TArray<T>));
 end;
 

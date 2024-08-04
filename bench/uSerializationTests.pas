@@ -83,7 +83,13 @@ begin
 
   mem := TMemoryStream.Create;
   DumpWorld(w1, mem);
+
   writeln(mem.Position);
+
+  var nn: TNonExistant;
+  w1.NewEntity.Add(nn);
+
+
   w1.Free;
 
   mem.Position := 0;
